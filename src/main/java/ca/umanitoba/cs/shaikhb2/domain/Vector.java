@@ -8,15 +8,18 @@ import java.util.List;
 
 public record Vector(double[] data) implements Iterable<Double> {
 
-    public Vector(final double[] data) {
+    public Vector(
+            final double[] data
+    ) {
         this.data = data.clone();
         checkVector();
     }
     public Vector(int size) {
         this(new double[size]);
     }
-
-    public Vector add(final Vector other) {
+    public Vector add(
+            final Vector other
+    ) {
         checkOtherVector(other);
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
@@ -25,14 +28,18 @@ public record Vector(double[] data) implements Iterable<Double> {
         return new Vector(result);
 
     }
-    public Vector scale(final double scalar) {
+    public Vector scale(
+            final double scalar
+    ) {
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
             result[i] *= scalar;
         }
         return new Vector(result);
     }
-    public double dot(final Vector other) {
+    public double dot(
+            final Vector other
+    ) {
         checkOtherVector(other);
         double result = 0;
         for (int i = 0; i < data.length; i++) {
@@ -47,8 +54,9 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return Math.sqrt(sum);
     }
-
-    public Vector permute(final List<Integer> shuffledIndices) {
+    public Vector permute(
+            final List<Integer> shuffledIndices
+    ) {
         Preconditions.checkNotNull(shuffledIndices, "Shuffled indices list must not be null");
         Preconditions.checkArgument(shuffledIndices.size() == length(), "Shuffled indices list size must match number of rows in the matrix");
         checkVector();
@@ -60,14 +68,14 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         return new Vector(shuffledData);
     }
-
-    public double get(final int index) {
+    public double get(
+            final int index
+    ) {
         Preconditions.checkState(index >= 0, "Index must be non-negative");
         Preconditions.checkState(index < data.length, "Index out of bounds");
 
         return data[index];
     }
-
     public int length() {
         return data.length;
     }
@@ -89,7 +97,9 @@ public record Vector(double[] data) implements Iterable<Double> {
         };
     }
 
-    private void checkOtherVector(final Vector other) {
+    private void checkOtherVector(
+            final Vector other
+    ) {
         Preconditions.checkNotNull(other, "Other vector must not be null");
         Preconditions.checkState(other.length() > 0, "Other vector must have at least one element");
         Preconditions.checkState(other.length() == this.length(),

@@ -1,8 +1,6 @@
 package ca.umanitoba.cs.shaikhb2.logic;
 
-import ca.umanitoba.cs.shaikhb2.domain.Exceptions.DeterminantDoesNotExistException;
-import ca.umanitoba.cs.shaikhb2.domain.Exceptions.InverseNotAvailableException;
-import ca.umanitoba.cs.shaikhb2.domain.Exceptions.MatrixMultiplyDimMismatchException;
+import ca.umanitoba.cs.shaikhb2.domain.Exceptions.*;
 import ca.umanitoba.cs.shaikhb2.domain.Matrix;
 import ca.umanitoba.cs.shaikhb2.domain.RREF.OperationRREF;
 import ca.umanitoba.cs.shaikhb2.domain.RREF.Type1;
@@ -85,38 +83,43 @@ public final class MatrixLogic {
     private static final double RELATIVE_TOLERANCE = 1e-10;
 
     public static void swapRows(
-            final Matrix A,
-            final int sourceRow,
-            final int targetRow
+            final Matrix A, final int sourceRow, final int targetRow
     ) {
-        Preconditions.checkState(sourceRow < A.rows(), "Row 1 index out of bounds");
-        Preconditions.checkState(targetRow < A.rows(), "Row 2 index out of bounds");
+        Preconditions.checkNotNull(A, "Matrix must not be null");
+        Preconditions.checkArgument(sourceRow >= 0, "Source row index must be non-negative");
+        Preconditions.checkArgument(sourceRow < A.rows(), "Source row index out of bounds");
+        Preconditions.checkArgument(targetRow >= 0, "Target row index must be non-negative");
+        Preconditions.checkArgument(targetRow < A.rows(), "Target row index out of bounds");
+
         double[] temp = A.data()[sourceRow];
         A.data()[sourceRow] = A.data()[targetRow];
         A.data()[targetRow] = temp;
     }
     public static void multiplyRow(
-            final Matrix A,
-            final int targetRow,
-            final double scalar
+            final Matrix A, final int targetRow, final double scalar
     ) {
-        Preconditions.checkState(targetRow < A.rows(), "Row index out of bounds");
-        Preconditions.checkState(scalar != 0, "Scalar must be non-zero");
+        Preconditions.checkNotNull(A, "Matrix must not be null");
+        Preconditions.checkArgument(targetRow >= 0, "Target row index must be non-negative");
+        Preconditions.checkArgument(targetRow < A.rows(), "Target row index out of bounds");
+        Preconditions.checkArgument(scalar != 0, "Scalar must be non-zero");
+        Preconditions.checkArgument(Double.isFinite(scalar), "Scalar must be finite");
+
         for (int j = 0; j < A.cols(); j++) {
             A.data()[targetRow][j] *= scalar;
         }
     }
     public static void reduceRow(
-            final Matrix A,
-            final int sourceRow,
-            final int targetRow,
-            final double scalar
+            final Matrix A, final int sourceRow, final int targetRow, final double scalar
     ) {
-        Preconditions.checkState(sourceRow < A.rows(), "Source row index out of bounds");
-        Preconditions.checkState(sourceRow >= 0, "Source row index must be non-negative");
-        Preconditions.checkState(targetRow < A.rows(), "Target row index out of bounds");
-        Preconditions.checkState(targetRow >= 0, "Target row index must be non-negative");
-        Preconditions.checkState(scalar != 0, "Scalar must be non-zero");
+        Preconditions.checkNotNull(A, "Matrix must not be null");
+        Preconditions.checkArgument(sourceRow < A.rows(), "Source row index out of bounds");
+        Preconditions.checkArgument(sourceRow >= 0, "Source row index must be non-negative");
+        Preconditions.checkArgument(targetRow < A.rows(), "Target row index out of bounds");
+        Preconditions.checkArgument(targetRow >= 0, "Target row index must be non-negative");
+        Preconditions.checkArgument(sourceRow != targetRow, "Source and target rows must differ");
+        Preconditions.checkArgument(scalar != 0, "Scalar must be non-zero");
+        Preconditions.checkArgument(Double.isFinite(scalar), "Scalar must be finite");
+
         for (int j = 0; j < A.cols(); j++) {
             A.data()[targetRow][j] += scalar * A.data()[sourceRow][j];
         }
