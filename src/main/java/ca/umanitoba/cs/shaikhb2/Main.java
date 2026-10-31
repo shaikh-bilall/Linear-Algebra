@@ -5,7 +5,5 @@ package ca.umanitoba.cs.shaikhb2;
 public class Main {
     public static void main(String[] args) {
 
-
-
     }
 }
