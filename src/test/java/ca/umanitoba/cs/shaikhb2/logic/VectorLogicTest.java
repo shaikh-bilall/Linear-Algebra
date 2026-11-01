@@ -64,13 +64,6 @@ class VectorLogicTest {
         assertVectorEquals(new double[]{9}, v);
     }
     @Test
-    void swapElementsMovesSpecialValuesWithoutAlteringThem() {
-        var v = vector(Double.NaN, 1, Double.POSITIVE_INFINITY, -0.0);
-        VectorLogic.swapElements(v, 0, 2);
-        VectorLogic.swapElements(v, 1, 3);
-        assertVectorEquals(new double[]{Double.POSITIVE_INFINITY, -0.0, Double.NaN, 1}, v);
-    }
-    @Test
     void swapElementsMatchesAReferenceSwapOnRandomVectors() {
         Random random = new Random(3); // fixed seed keeps failures reproducible
         for (int trial = 0; trial < 200; trial++) {

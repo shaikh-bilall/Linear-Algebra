@@ -1,4 +1,4 @@
-package ca.umanitoba.cs.shaikhb2.logic;
+package ca.umanitoba.cs.shaikhb2;
 
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -9,11 +9,11 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage;
 
-public class MainLogicTests {
+public class RunAllTests {
 
     public static void main(String[] args) {
         // Discovers every test class under this package, so tests added later are picked up automatically.
-        // To run only this file, use selectClass(MainLogicTests.class) instead.
+        // To run only this file, use selectClass(RunAllTests.class) instead.
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(selectPackage("ca.umanitoba.cs.shaikhb2"))
                 .build();
