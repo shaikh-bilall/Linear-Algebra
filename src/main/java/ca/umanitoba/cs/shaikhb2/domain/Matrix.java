@@ -5,6 +5,11 @@ import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * A rectangular matrix of finite real numbers, with structural operations such as transpose, merge and row reordering.
+ *
+ * @param data the entries, indexed as {@code data[row][column]}; {@code data()} returns this array itself, not a copy
+ */
 public record Matrix(double[][] data) {
 
     public Matrix(
@@ -18,6 +23,13 @@ public record Matrix(double[][] data) {
         }
         checkMatrix();
     }
+
+    /**
+     * Returns the transpose, with rows and columns swapped.
+     *
+     * @return a new matrix; this one is unchanged
+     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
+     */
     public Matrix transpose() {
         double[][] transposedData = new double[cols()][rows()];
         for (int i = 0; i < rows(); i++) {
@@ -29,6 +41,15 @@ public record Matrix(double[][] data) {
         Preconditions.checkState(transposed.rows() == cols() && transposed.cols() == rows(), "Transpose must swap the dimensions");
         return transposed;
     }
+    /**
+     * Multiplies this matrix by a vector, giving one entry per row.
+     *
+     * @param vector the vector to multiply, whose length must equal the number of columns
+     * @return the product of this matrix and {@code vector}
+     * @throws NullPointerException if {@code vector} is {@code null}
+     * @throws IllegalStateException if the dimensions do not match, the product overflows, or this matrix was
+     *                               corrupted through {@code data()}
+     */
     public Vector multiply(
             final Vector vector
     ) {
@@ -46,6 +67,14 @@ public record Matrix(double[][] data) {
         Preconditions.checkState(product.length() == rows(), "Product must have one entry per row");
         return product;
     }
+    /**
+     * Places another matrix to the right of this one, as when forming an augmented matrix {@code [A | b]}.
+     *
+     * @param other the matrix whose columns are appended, with the same number of rows as this one
+     * @return a new matrix with the columns of both; neither operand is changed
+     * @throws NullPointerException if {@code other} is {@code null}
+     * @throws IllegalStateException if the row counts differ, or either matrix was corrupted through {@code data()}
+     */
     public Matrix merge(
             final Matrix other
     ) {
@@ -61,6 +90,15 @@ public record Matrix(double[][] data) {
         Preconditions.checkState(merged.cols() == this.cols() + other.cols(), "Merged matrix must have the combined number of columns");
         return merged;
     }
+    /**
+     * Reorders the rows: row {@code i} of the result is row {@code shuffledIndices.get(i)} of this matrix.
+     *
+     * @param shuffledIndices a permutation of the row indices, each of {@code 0} to {@code rows() - 1} exactly once
+     * @return a new matrix with the rows reordered
+     * @throws NullPointerException if {@code shuffledIndices} or any of its elements is {@code null}
+     * @throws IllegalStateException if the list is not a permutation of the row indices, or this matrix was
+     *                               corrupted through {@code data()}
+     */
     public Matrix permuteRows(
             final List<Integer> shuffledIndices
     ) {
@@ -77,6 +115,14 @@ public record Matrix(double[][] data) {
         Preconditions.checkState(shuffled.rows() == rows() && shuffled.cols() == cols(), "Permuting the rows must keep the dimensions");
         return shuffled;
     }
+    /**
+     * Returns one row as a vector.
+     *
+     * @param rowIndex the zero-based index of the row
+     * @return a copy of the row; changing it does not affect this matrix
+     * @throws IllegalStateException if {@code rowIndex} is out of range, or this matrix was corrupted through
+     *                               {@code data()}
+     */
     public Vector getRow(
             final int rowIndex
     ) {
@@ -86,6 +132,15 @@ public record Matrix(double[][] data) {
         Preconditions.checkState(row.length() == cols(), "Row must have one entry per column");
         return row;
     }
+    /**
+     * Returns a single entry.
+     *
+     * @param rowIndex the zero-based row index
+     * @param colIndex the zero-based column index
+     * @return the entry at that position
+     * @throws IllegalStateException if either index is out of range, or this matrix was corrupted through
+     *                               {@code data()}
+     */
     public double get(
             final int rowIndex,
             final int colIndex
@@ -97,14 +152,32 @@ public record Matrix(double[][] data) {
         Preconditions.checkState(Double.isFinite(value), "Entry must be finite");
         return value;
     }
+    /**
+     * Returns the number of rows.
+     *
+     * @return the row count, always at least 1
+     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
+     */
     public int rows() {
         Preconditions.checkState(data.length > 0, "Matrix must have at least one row");
         return data.length;
     }
+    /**
+     * Returns the number of columns.
+     *
+     * @return the column count, always at least 1
+     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
+     */
     public int cols() {
         Preconditions.checkState(data[0] != null && data[0].length > 0, "Matrix must have at least one column");
         return data[0].length;
     }
+    /**
+     * Returns an independent copy, which can be changed in place without affecting this matrix.
+     *
+     * @return a new matrix with the same entries
+     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
+     */
     public Matrix copy() {
         double[][] clonedData = new double[rows()][cols()];
         for (int i = 0; i < rows(); i++) {
@@ -114,6 +187,8 @@ public record Matrix(double[][] data) {
         Preconditions.checkState(copy.rows() == rows() && copy.cols() == cols(), "Copy must have the same dimensions");
         return copy;
     }
+
+    // Checks that the matrix is well-formed: non-null, rectangular, and with finite entries.
     private void checkMatrix() {
         Preconditions.checkNotNull(data, "Matrix data must not be null");
         Preconditions.checkState(data.length > 0, "Matrix must have at least one row");

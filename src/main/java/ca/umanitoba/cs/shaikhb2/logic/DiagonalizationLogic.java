@@ -12,14 +12,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-// Diagonalizes a real square matrix as A = P D P^-1 without ever leaving the reals:
-//   1. Householder reflections reduce A to upper Hessenberg form.
-//   2. Francis double-shift QR iteration reduces that to a real Schur form A = Q T Q^T with T upper triangular.
-//      A 2x2 block that cannot be split means a complex eigenvalue pair, which has no real diagonalization.
-//   3. The eigenvalues are the diagonal of T. Values that agree to within a tolerance are one repeated eigenvalue.
-//   4. The eigenvectors of each eigenvalue are the null space of T - lambda*I (found with MatrixLogic's RREF),
-//      mapped back to the original coordinates through Q.
-//   5. P must be invertible, which is exactly the condition for A to be diagonalizable.
+/**
+ * Diagonalizes a real square matrix as {@code A = P D P^-1}, using real numbers only. A matrix with complex
+ * eigenvalues, or with too few independent eigenvectors, has no such factorization and is rejected.
+ */
 public final class DiagonalizationLogic {
 
     private final Matrix A;
@@ -47,9 +43,14 @@ public final class DiagonalizationLogic {
         this.A = A;
     }
 
-    // The columns of P are unit eigenvectors, ordered by the magnitude of their eigenvalue (largest first); D holds
-    // the matching eigenvalues on its diagonal and inverseP is P^-1, kept so A^k = P D^k P^-1 needs no second inverse.
-    // Throws if A has complex eigenvalues or is defective (too few independent eigenvectors).
+    /**
+     * Computes the diagonalization of the matrix.
+     *
+     * @return the factorization, with the eigenvalues ordered by decreasing magnitude and the columns of {@code P} the
+     *         matching unit eigenvectors
+     * @throws NotDiagonalizableException if the matrix has complex eigenvalues or is defective
+     * @throws IllegalStateException if the eigenvalues cannot be computed
+     */
     public Diagonalization diagonalize()
             throws NotDiagonalizableException
     {
@@ -473,6 +474,7 @@ public final class DiagonalizationLogic {
             M[r][p + 1] = cos * right - sin * left;
         }
     }
+    // The Frobenius norm of M, which is the square root of the sum of the squares of its entries.
     private static double getFrobeniusNorm(
             final double[][] M
     ) {
@@ -496,6 +498,7 @@ public final class DiagonalizationLogic {
         }
         return (maxAbs == 0) ? 1 : maxAbs;
     }
+    // The identity matrix of the given dimension, as a 2D array.
     private static double[][] getIdentityData(
             final int dimension
     ) {
@@ -505,4 +508,5 @@ public final class DiagonalizationLogic {
         }
         return identityData;
     }
+
 }

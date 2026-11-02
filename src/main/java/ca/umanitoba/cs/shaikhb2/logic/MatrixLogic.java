@@ -11,7 +11,15 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Row-reduction based operations on a fixed matrix: RREF, determinant, inverse and product. The instance methods never
+ * modify that matrix. The static methods are the elementary row operations, each of which modifies the matrix it is
+ * given in place.
+ */
 public final class MatrixLogic {
+
+    // Relative to the largest absolute entry of the input; anything at or below this value counts as zero.
+    private static final double RELATIVE_TOLERANCE = 1e-10;
 
     private final Matrix A;
     private final List<OperationRREF> operationsRREF;
@@ -30,6 +38,14 @@ public final class MatrixLogic {
         }
     }
 
+    /**
+     * Multiplies the matrix by another on its right.
+     *
+     * @param other the right-hand factor, with as many rows as the matrix has columns
+     * @return the product, as a new matrix
+     * @throws MatrixMultiplyDimMismatchException if the dimensions do not allow the product
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
     public Matrix multiply(
             final Matrix other
     )
@@ -56,6 +72,11 @@ public final class MatrixLogic {
 
         return new Matrix(resultData);
     }
+    /**
+     * Returns the reduced row echelon form of the matrix.
+     *
+     * @return a new matrix in reduced row echelon form
+     */
     public Matrix rref() {
         var rrefMatrix = A.copy();
         for (var operation : operationsRREF) {
@@ -63,6 +84,12 @@ public final class MatrixLogic {
         }
         return rrefMatrix;
     }
+    /**
+     * Returns the inverse of the matrix.
+     *
+     * @return the inverse, as a new matrix
+     * @throws InverseNotAvailableException if the matrix is not square or is singular
+     */
     public Matrix inverse()
             throws InverseNotAvailableException
     {
@@ -75,13 +102,23 @@ public final class MatrixLogic {
         }
         return inverse;
     }
+    /**
+     * Returns the determinant of the matrix.
+     *
+     * @return the determinant: 0 for a singular matrix, and {@code NaN} for a matrix that is not square
+     */
     public double determinant() {
         return determinant;
     }
-
-    // Relative to the largest absolute entry of the input; anything at or below this value counts as zero.
-    private static final double RELATIVE_TOLERANCE = 1e-10;
-
+    /**
+     * Swaps two rows of a matrix, in place.
+     *
+     * @param A         the matrix to modify
+     * @param sourceRow the zero-based index of one of the rows
+     * @param targetRow the zero-based index of the other row
+     * @throws NullPointerException     if {@code A} is null
+     * @throws IllegalArgumentException if either row index is out of range
+     */
     public static void swapRows(
             final Matrix A, final int sourceRow, final int targetRow
     ) {
@@ -95,6 +132,15 @@ public final class MatrixLogic {
         A.data()[sourceRow] = A.data()[targetRow];
         A.data()[targetRow] = temp;
     }
+    /**
+     * Multiplies every entry of a row by a scalar, in place.
+     *
+     * @param A         the matrix to modify
+     * @param targetRow the zero-based index of the row to scale
+     * @param scalar    the factor, which must be nonzero and finite
+     * @throws NullPointerException     if {@code A} is null
+     * @throws IllegalArgumentException if {@code targetRow} is out of range, or {@code scalar} is zero or not finite
+     */
     public static void multiplyRow(
             final Matrix A, final int targetRow, final double scalar
     ) {
@@ -108,6 +154,17 @@ public final class MatrixLogic {
             A.data()[targetRow][j] *= scalar;
         }
     }
+    /**
+     * Adds a multiple of one row to another row, in place.
+     *
+     * @param A         the matrix to modify
+     * @param sourceRow the zero-based index of the row whose multiple is added; it is left unchanged
+     * @param targetRow the zero-based index of the row that receives the multiple
+     * @param scalar    the multiple, which must be nonzero and finite
+     * @throws NullPointerException     if {@code A} is null
+     * @throws IllegalArgumentException if either row index is out of range, the two rows are the same, or
+     *                                  {@code scalar} is zero or not finite
+     */
     public static void reduceRow(
             final Matrix A, final int sourceRow, final int targetRow, final double scalar
     ) {
@@ -124,6 +181,8 @@ public final class MatrixLogic {
             A.data()[targetRow][j] += scalar * A.data()[sourceRow][j];
         }
     }
+
+    // Returns the sequence of operations that would reduce the matrix to RREF, without modifying the matrix itself.
     private static List<OperationRREF> getOperationsRREF(
             final double[][] data
     ) {
@@ -204,6 +263,7 @@ public final class MatrixLogic {
             }
         }
     }
+    // Returns the determinant of a square matrix, or throws if the matrix is not square. The determinant is computed
     private static double getDeterminant(
             final Matrix A,
             final List<OperationRREF> operationsRREF
@@ -238,6 +298,7 @@ public final class MatrixLogic {
         }
         return determinant;
     }
+    // Returns the identity matrix of the given dimension.
     private static Matrix getIdentity(
             final int dimension
     ) {
@@ -247,6 +308,7 @@ public final class MatrixLogic {
         }
         return new Matrix(identityData);
     }
+    // Returns a tolerance for zero, relative to the largest absolute entry of the matrix. This is used to avoid
     private static double getTolerance(
             final Matrix A
     ) {
@@ -258,4 +320,5 @@ public final class MatrixLogic {
         }
         return RELATIVE_TOLERANCE * maxAbs;
     }
+
 }

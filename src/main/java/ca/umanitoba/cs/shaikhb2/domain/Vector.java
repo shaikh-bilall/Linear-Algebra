@@ -8,6 +8,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+/**
+ * A vector of finite real numbers, with basic arithmetic: addition, scaling, dot product and length. It can be
+ * iterated over entry by entry.
+ *
+ * @param data the entries in order; {@code data()} returns this array itself, not a copy
+ */
 public record Vector(double[] data) implements Iterable<Double> {
 
     public Vector(
@@ -20,6 +26,15 @@ public record Vector(double[] data) implements Iterable<Double> {
     public Vector(int size) {
         this(zeros(size));
     }
+
+    /**
+     * Returns the entrywise sum of this vector and another of the same length.
+     *
+     * @param other the vector to add
+     * @return a new vector holding the sum
+     * @throws NullPointerException if {@code other} is {@code null}
+     * @throws IllegalStateException if the lengths differ, the sum overflows, or either vector is invalid
+     */
     public Vector add(
             final Vector other
     ) {
@@ -30,6 +45,13 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return new Vector(result); // post: same length, finite entries (the constructor rejects an overflowed sum)
     }
+    /**
+     * Returns this vector multiplied by a scalar.
+     *
+     * @param scalar the finite factor to multiply every entry by
+     * @return a new vector holding the product
+     * @throws IllegalStateException if {@code scalar} is not finite, the product overflows, or this vector is invalid
+     */
     public Vector scale(
             final double scalar
     ) {
@@ -40,6 +62,14 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return new Vector(result); // post: same length, finite entries (the constructor rejects an overflowed product)
     }
+    /**
+     * Returns the dot product of this vector and another of the same length.
+     *
+     * @param other the vector to take the dot product with
+     * @return the dot product
+     * @throws NullPointerException if {@code other} is {@code null}
+     * @throws IllegalStateException if the lengths differ, the result overflows, or either vector is invalid
+     */
     public double dot(
             final Vector other
     ) {
@@ -51,6 +81,12 @@ public record Vector(double[] data) implements Iterable<Double> {
         Preconditions.checkState(Double.isFinite(result), "Dot product must be finite");
         return result;
     }
+    /**
+     * Returns the Euclidean length of this vector.
+     *
+     * @return the length, never negative
+     * @throws IllegalStateException if the result overflows, or this vector is invalid
+     */
     public double norm() {
         double norm = 0;
         for (double v : data) {
@@ -59,6 +95,14 @@ public record Vector(double[] data) implements Iterable<Double> {
         Preconditions.checkState(Double.isFinite(norm), "Norm must be finite");
         return norm;
     }
+    /**
+     * Reorders the entries: entry {@code i} of the result is entry {@code shuffledIndices.get(i)} of this vector.
+     *
+     * @param shuffledIndices each index from {@code 0} to {@code length() - 1}, exactly once
+     * @return a new vector with the entries reordered
+     * @throws NullPointerException if {@code shuffledIndices} or any of its elements is {@code null}
+     * @throws IllegalStateException if the list is not a permutation of the indices, or this vector is invalid
+     */
     public Vector permute(
             final List<Integer> shuffledIndices
     ) {
@@ -74,6 +118,13 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         return new Vector(shuffledData); // post: same length, same entries in a new order
     }
+    /**
+     * Returns a single entry.
+     *
+     * @param index the zero-based position
+     * @return the entry at that position
+     * @throws IllegalStateException if {@code index} is out of range, or this vector is invalid
+     */
     public double get(
             final int index
     ) {
@@ -84,11 +135,23 @@ public record Vector(double[] data) implements Iterable<Double> {
         Preconditions.checkState(Double.isFinite(value), "Entry must be finite");
         return value;
     }
+    /**
+     * Returns the number of entries.
+     *
+     * @return the length
+     * @throws IllegalStateException if this vector is invalid
+     */
     public int length() {
         Preconditions.checkState(data.length > 0, "Vector must have at least one element");
         return data.length;
     }
 
+    /**
+     * Iterates over the entries in order.
+     *
+     * @return an iterator over the entries
+     * @throws IllegalStateException if this vector is invalid
+     */
     @Override@NonNull
     public Iterator<Double> iterator() {
         checkVector();
@@ -110,6 +173,7 @@ public record Vector(double[] data) implements Iterable<Double> {
         };
     }
 
+    // Checks that the other vector is valid and of the same length as this one.
     private void checkOtherVector(
             final Vector other
     ) {
@@ -118,6 +182,7 @@ public record Vector(double[] data) implements Iterable<Double> {
         Preconditions.checkState(other.length() == this.length(),
                 "Vectors must be of the same length: %s != %s", other.length(), this.length());
     }
+    // Checks that this vector is valid: non-null, non-empty, and all entries finite.
     private void checkVector() {
         Preconditions.checkNotNull(data, "Vector data must not be null");
         Preconditions.checkState(data.length > 0, "Vector must have at least one element");
@@ -135,10 +200,12 @@ public record Vector(double[] data) implements Iterable<Double> {
             seen[index] = true;
         }
     }
+    // Returns a new array of the given size, filled with zeros.
     private static double[] zeros(
             final int size
     ) {
         Preconditions.checkArgument(size > 0, "Vector size must be positive");
         return new double[size];
     }
+
 }

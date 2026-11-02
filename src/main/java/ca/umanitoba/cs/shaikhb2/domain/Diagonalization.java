@@ -2,8 +2,14 @@ package ca.umanitoba.cs.shaikhb2.domain;
 
 import com.google.common.base.Preconditions;
 
-// The factorization A = P D P^-1 of a diagonalizable matrix A: the columns of P are eigenvectors of A, D is diagonal
-// and holds the matching eigenvalues, and inverseP is P^-1 (kept so that A^k = P D^k P^-1 needs no second inverse).
+/**
+ * The factorization {@code A = P D P^-1} of a diagonalizable matrix {@code A}. All three matrices are square and the
+ * same size, and {@code D} is diagonal.
+ *
+ * @param P        the eigenvectors of {@code A}, one per column
+ * @param D        the eigenvalues matching the columns of {@code P}, on the diagonal
+ * @param inverseP the inverse of {@code P}
+ */
 public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
 
     public Diagonalization(
@@ -23,6 +29,8 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
         this.D = D.copy();
         this.inverseP = inverseP.copy();
     }
+
+    // Checks that the matrix is diagonal, i.e. all off-diagonal elements are zero.
     private static void checkDiagonal(
             final Matrix D
     ) {
