@@ -80,38 +80,36 @@ Maven downloads the dependencies on the first build: Guava (`33.5.0-jre`), and f
 src
 ├── main
 │   └── java
-│       └── ca/umanitoba/cs/shaikhb2
-│           ├── Main.java                         Sample problems
-│           ├── domain
-│           │   ├── Diagonalization.java
-│           │   ├── Matrix.java
-│           │   ├── Vector.java
-│           │   ├── Exceptions
-│           │   │   ├── DeterminantDoesNotExistException.java
-│           │   │   ├── InverseNotAvailableException.java
-│           │   │   ├── MatrixMultiplyDimMismatchException.java
-│           │   │   └── NotDiagonalizableException.java
-│           │   └── RREF
-│           │       ├── OperationRREF.java
-│           │       ├── Type1.java                Swap two rows
-│           │       ├── Type2.java                Scale a row
-│           │       └── Type3.java                Add a multiple of a row to another
-│           └── logic
-│               ├── DiagonalizationLogic.java
-│               ├── MatrixLogic.java
-│               └── VectorLogic.java
+│       ├── Main.java                         Sample problems
+│       ├── domain
+│       │   ├── Diagonalization.java
+│       │   ├── Matrix.java
+│       │   ├── Vector.java
+│       │   ├── Exceptions
+│       │   │   ├── DeterminantDoesNotExistException.java
+│       │   │   ├── InverseNotAvailableException.java
+│       │   │   ├── MatrixMultiplyDimMismatchException.java
+│       │   │   └── NotDiagonalizableException.java
+│       │   └── RREF
+│       │       ├── OperationRREF.java
+│       │       ├── Type1.java                Swap two rows
+│       │       ├── Type2.java                Scale a row
+│       │       └── Type3.java                Add a multiple of a row to another
+│       └── logic
+│           ├── DiagonalizationLogic.java
+│           ├── MatrixLogic.java
+│           └── VectorLogic.java
 └── test
     └── java
-        └── ca/umanitoba/cs/shaikhb2
-            ├── RunAllTests.java                  Runs every test and prints a summary
-            ├── domain
-            │   ├── DiagonalizationTest.java
-            │   ├── MatrixTest.java
-            │   └── VectorTest.java
-            └── logic
-                ├── DiagonalizationLogicTest.java
-                ├── MatrixLogicTest.java
-                └── VectorLogicTest.java
+        ├── RunAllTests.java                  Runs every test and prints a summary
+        ├── domain
+        │   ├── DiagonalizationTest.java
+        │   ├── MatrixTest.java
+        │   └── VectorTest.java
+        └── logic
+            ├── DiagonalizationLogicTest.java
+            ├── MatrixLogicTest.java
+            └── VectorLogicTest.java
 ```
 
 ## Running the sample problems
@@ -133,7 +131,7 @@ src
 Open a terminal in the project root (the folder that contains `pom.xml`) and run:
 
 ```powershell
-mvn compile exec:java "-Dexec.mainClass=ca.umanitoba.cs.shaikhb2.Main"
+mvn compile exec:java "-Dexec.mainClass=Main"
 ```
 
 The quotes around the `-D` option are needed in PowerShell, which otherwise splits the argument at the dot. They are harmless in other shells. The first run downloads the dependencies and the `exec` plugin, so it needs an internet connection.
@@ -142,8 +140,8 @@ The quotes around the `-D` option are needed in PowerShell, which otherwise spli
 
 1. Choose **File | Open**, select the project's `pom.xml`, and open it as a project. Wait for the Maven import to finish.
 2. Check **File | Project Structure | Project** and make sure the SDK is a JDK 25.
-3. Open `src/main/java/ca/umanitoba/cs/shaikhb2/Main.java`.
-4. Click the green arrow in the gutter next to `public static void main` and choose **Run 'ca.umanitoba.cs.shaikhb2.Main.main()'**. The output appears in the **Run** tool window.
+3. Open `src/main/java/Main.java`.
+4. Click the green arrow in the gutter next to `public static void main` and choose **Run 'Main.main()'**. The output appears in the **Run** tool window.
 
 ## Running the tests
 
@@ -162,7 +160,7 @@ Maven prints a summary per test class and ends with `BUILD SUCCESS` when everyth
 The project also contains `RunAllTests`, a small program that finds every test class under the project's package, runs them, and prints one summary with the failures listed first. It exits with code 0 when every test passes and 1 otherwise:
 
 ```powershell
-mvn test-compile exec:java "-Dexec.mainClass=ca.umanitoba.cs.shaikhb2.RunAllTests" "-Dexec.classpathScope=test"
+mvn test-compile exec:java "-Dexec.mainClass=RunAllTests" "-Dexec.classpathScope=test"
 ```
 
 `RunAllTests` ends the program itself, so Maven stops as soon as the summary is printed and shows no `BUILD SUCCESS` line. In PowerShell, `$LASTEXITCODE` holds the exit code afterward.
@@ -174,11 +172,11 @@ Any of these work once the project is open (see the steps above):
 - **All tests:** In the **Project** tool window, right-click `src/test/java` and choose **Run 'All Tests'**. Results appear as a tree in the **Run** tool window, where you can click a failing test to jump to it.
 - **One class or one test:** Open a test class and click the green arrow in the gutter next to the class name, or next to a single test method.
 - **Through Maven:** Open the **Maven** tool window, expand **LinearAlgebra | Lifecycle**, and double-click **test**. This runs the same thing as `mvn test`.
-- **With `RunAllTests`:** Open `src/test/java/ca/umanitoba/cs/shaikhb2/RunAllTests.java` and click the green arrow next to `main`. The summary is printed in the **Run** tool window.
+- **With `RunAllTests`:** Open `src/test/java/RunAllTests.java` and click the green arrow next to `main`. The summary is printed in the **Run** tool window.
 
 ## Using the library
 
-The pattern is the same throughout: wrap your numbers in a `Matrix` or `Vector`, hand the matrix to the logic class that does the work, and read the result from the returned object. `MatrixLogic` takes a `Matrix` and answers questions about it, `DiagonalizationLogic` takes a square `Matrix` and returns a `Diagonalization`, and `VectorLogic` and the static methods of `MatrixLogic` modify a vector or matrix in place. The checked exceptions listed above tell you when a request has no answer, for example an inverse that does not exist. `ca.umanitoba.cs.shaikhb2.Main` shows each of these end to end.
+The pattern is the same throughout: wrap your numbers in a `Matrix` or `Vector`, hand the matrix to the logic class that does the work, and read the result from the returned object. `MatrixLogic` takes a `Matrix` and answers questions about it, `DiagonalizationLogic` takes a square `Matrix` and returns a `Diagonalization`, and `VectorLogic` and the static methods of `MatrixLogic` modify a vector or matrix in place. The checked exceptions listed above tell you when a request has no answer, for example an inverse that does not exist. `Main` shows each of these end to end.
 
 Every public class and method has Javadoc. In IntelliJ, press **Ctrl+Q** on a name (or hover over it) to read it.
 
