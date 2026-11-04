@@ -188,6 +188,53 @@ public record Matrix(double[][] data) {
         return copy;
     }
 
+    /**
+     * Compares this matrix to another object for equality, entry by entry. Two matrices are equal when they have the
+     * same dimensions and every pair of matching entries is numerically equal, so {@code 0.0} and {@code -0.0} count
+     * as the same entry.
+     *
+     * @param otherObject the object to compare with
+     * @return {@code true} if {@code otherObject} is a matrix with the same dimensions and entries
+     * @throws IllegalStateException if this matrix, or the other one, was corrupted through {@code data()}
+     */
+    @Override
+    public boolean equals(
+            final Object otherObject
+    ) {
+        checkMatrix();
+        if (this == otherObject) {
+            return true;
+        }
+        if (!(otherObject instanceof Matrix otherMatrix)) {
+            return false;
+        }
+        otherMatrix.checkMatrix();
+        if (data.length != otherMatrix.data.length) {
+            return false;
+        }
+        for (int i = 0; i < data.length; i++) {
+            if (!Vector.entriesEqual(data[i], otherMatrix.data[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     * Returns a hash code that agrees with {@link #equals}: matrices that are equal have the same hash code.
+     *
+     * @return the hash code of the entries
+     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
+     */
+    @Override
+    public int hashCode() {
+        checkMatrix();
+        int result = 1;
+        for (double[] row : data) {
+            result = 31 * result + Vector.entriesHashCode(row);
+        }
+        return result;
+    }
+
     // Checks that the matrix is well-formed: non-null, rectangular, and with finite entries.
     private void checkMatrix() {
         Preconditions.checkNotNull(data, "Matrix data must not be null");

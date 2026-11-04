@@ -2,6 +2,8 @@ package ca.umanitoba.cs.shaikhb2.domain;
 
 import com.google.common.base.Preconditions;
 
+import java.util.Objects;
+
 /**
  * The factorization {@code A = P D P^-1} of a diagonalizable matrix {@code A}. All three matrices are square and the
  * same size, and {@code D} is diagonal.
@@ -28,6 +30,39 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
         this.P = P.copy();
         this.D = D.copy();
         this.inverseP = inverseP.copy();
+    }
+
+    /**
+     * Compares this diagonalization to another object for equality: it is equal when {@code P}, {@code D} and the
+     * inverse of {@code P} are each equal to those of the other, as defined by {@link Matrix#equals}.
+     *
+     * @param otherObject the object to compare with
+     * @return {@code true} if {@code otherObject} is a diagonalization with equal matrices
+     * @throws IllegalStateException if one of the matrices that gets compared was corrupted through {@code data()}
+     */
+    @Override
+    public boolean equals(
+            final Object otherObject
+    ) {
+        if (this == otherObject) {
+            return true;
+        }
+        if (!(otherObject instanceof Diagonalization otherDiagonalization)) {
+            return false;
+        }
+        return P.equals(otherDiagonalization.P)
+                && D.equals(otherDiagonalization.D)
+                && inverseP.equals(otherDiagonalization.inverseP);
+    }
+    /**
+     * Returns a hash code that agrees with {@link #equals}: diagonalizations that are equal have the same hash code.
+     *
+     * @return the hash code of the three matrices
+     * @throws IllegalStateException if one of the matrices was corrupted through {@code data()}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(P, D, inverseP);
     }
 
     // Checks that the matrix is diagonal, i.e. all off-diagonal elements are zero.

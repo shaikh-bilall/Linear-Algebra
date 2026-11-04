@@ -4,20 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Random;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class VectorTest {
 
@@ -411,6 +400,98 @@ class VectorTest {
             }
             assertEquals(a.length(), index);
         }
+    }
+
+    // ---------- equals and hashCode ----------
+
+    @Test
+    void equalsHoldsForVectorsWithTheSameEntries() {
+        var vector = new Vector(new double[]{1, 2, 3});
+        var same = new Vector(new double[]{1, 2, 3});
+        assertEquals(vector, vector);
+        assertEquals(vector, same);
+        assertEquals(same, vector);
+        assertEquals(vector.hashCode(), same.hashCode());
+        assertEquals(new Vector(new double[3]), new Vector(3));
+    }
+    @Test
+    void equalsFailsWhenAnySingleEntryDiffers() {
+        var vector = new Vector(new double[]{1, 2, 3});
+        for (int i = 0; i < 3; i++) {
+            double[] changed = {1, 2, 3};
+            changed[i] += 1;
+            assertNotEquals(vector, new Vector(changed));
+            assertNotEquals(new Vector(changed), vector);
+        }
+    }
+    @Test
+    void equalsHasNoToleranceForTinyDifferences() {
+        assertNotEquals(new Vector(new double[]{1, 2}), new Vector(new double[]{1, Math.nextUp(2.0)}));
+    }
+    @Test
+    void equalsFailsForDifferentLengths() {
+        var vector = new Vector(new double[]{1, 2, 3});
+        assertNotEquals(vector, new Vector(new double[]{1, 2}));
+        assertNotEquals(vector, new Vector(new double[]{1, 2, 3, 4}));
+        assertNotEquals(vector, new Vector(new double[]{1}));
+    }
+    @Test
+    void equalsFailsForNullAndForOtherTypes() {
+        var vector = new Vector(new double[]{1, 2});
+        assertFalse(vector.equals(null));
+        assertFalse(vector.equals("[1.0, 2.0]"));
+        assertFalse(vector.equals(new double[]{1, 2}));
+        assertFalse(vector.equals(new Matrix(new double[][]{{1, 2}})));
+    }
+    @Test
+    void equalsTreatsPositiveAndNegativeZeroAsTheSameEntry() {
+        var positive = new Vector(new double[]{0.0, 1, 0.0});
+        var negative = new Vector(new double[]{-0.0, 1, -0.0});
+        assertEquals(positive, negative);
+        assertEquals(negative, positive);
+        assertEquals(positive.hashCode(), negative.hashCode());
+    }
+    @Test
+    void equalsAndHashCodeAgreeWithEntrywiseComparisonOnRandomVectors() {
+        Random random = new Random(12);
+        for (int trial = 0; trial < 500; trial++) {
+            int size = 1 + random.nextInt(5);
+            double[] data = new double[size];
+            for (int i = 0; i < size; i++) {
+                data[i] = random.nextInt(5) - 2;
+            }
+            double[] other = data.clone();
+            if (random.nextBoolean()) {
+                other[random.nextInt(size)] += 1;
+            }
+            boolean expected = Arrays.equals(data, other);
+            var vector = new Vector(data);
+            var otherVector = new Vector(other);
+            assertEquals(expected, vector.equals(otherVector));
+            assertEquals(expected, otherVector.equals(vector));
+            if (expected) {
+                assertEquals(vector.hashCode(), otherVector.hashCode());
+            }
+        }
+    }
+    @Test
+    void equalVectorsAreInterchangeableAsHashKeys() {
+        Set<Vector> vectors = new HashSet<>();
+        vectors.add(new Vector(new double[]{1, 2, 3}));
+        assertTrue(vectors.contains(new Vector(new double[]{1, 2, 3})));
+        assertFalse(vectors.contains(new Vector(new double[]{3, 2, 1})));
+        vectors.add(new Vector(new double[]{1, 2, 3}));
+        assertEquals(1, vectors.size());
+    }
+    @Test
+    void equalityOnACorruptedVectorIsRejected() {
+        var healthy = new Vector(new double[]{1, 2});
+        var corrupted = new Vector(new double[]{1, 2});
+        corrupted.data()[0] = Double.NaN;
+        assertThrows(IllegalStateException.class, () -> corrupted.equals(healthy));
+        assertThrows(IllegalStateException.class, () -> healthy.equals(corrupted));
+        assertThrows(IllegalStateException.class, () -> corrupted.equals(corrupted));
+        assertThrows(IllegalStateException.class, corrupted::hashCode);
     }
 
     // ---------- corrupted state ----------

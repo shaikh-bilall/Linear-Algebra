@@ -5,16 +5,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MatrixTest {
 
@@ -399,6 +392,133 @@ class MatrixTest {
         var matrix = new Matrix(sampleData());
         assertThrows(NullPointerException.class, () -> matrix.permuteRows(null));
         assertThrows(NullPointerException.class, () -> matrix.permuteRows(Arrays.asList(0, null, 2)));
+    }
+
+    // ---------- equals and hashCode ----------
+
+    @Test
+    void equalsHoldsForMatricesWithTheSameEntries() {
+        var matrix = new Matrix(sampleData());
+        var same = new Matrix(sampleData());
+        assertEquals(matrix, matrix);
+        assertEquals(matrix, same);
+        assertEquals(same, matrix);
+        assertEquals(matrix.hashCode(), same.hashCode());
+    }
+    @Test
+    void equalsIsTransitive() {
+        var first = new Matrix(sampleData());
+        var second = new Matrix(sampleData());
+        var third = new Matrix(sampleData());
+        assertEquals(first, second);
+        assertEquals(second, third);
+        assertEquals(first, third);
+    }
+    @Test
+    void equalsFailsWhenAnySingleEntryDiffers() {
+        var matrix = new Matrix(sampleData());
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 2; j++) {
+                double[][] changed = sampleData();
+                changed[i][j] += 1;
+                assertNotEquals(matrix, new Matrix(changed));
+                assertNotEquals(new Matrix(changed), matrix);
+            }
+        }
+    }
+    @Test
+    void equalsHasNoToleranceForTinyDifferences() {
+        double[][] changed = sampleData();
+        changed[0][0] = Math.nextUp(changed[0][0]);
+        assertNotEquals(new Matrix(sampleData()), new Matrix(changed));
+    }
+    @Test
+    void equalsFailsForDifferentDimensions() {
+        var matrix = new Matrix(sampleData()); // 3x2
+        assertNotEquals(matrix, new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}})); // 2x3
+        assertNotEquals(matrix, new Matrix(new double[][]{{1, 2}, {3, 4}})); // fewer rows, same leading entries
+        assertNotEquals(matrix, new Matrix(new double[][]{{1}, {3}, {5}})); // fewer columns, same leading entries
+        assertNotEquals(new Matrix(new double[][]{{1, 2, 3, 4}}), new Matrix(new double[][]{{1, 2}, {3, 4}})); // same entry count
+    }
+    @Test
+    void equalsFailsForNullAndForOtherTypes() {
+        var matrix = new Matrix(new double[][]{{1, 2}});
+        assertFalse(matrix.equals(null));
+        assertFalse(matrix.equals("[[1.0, 2.0]]"));
+        assertFalse(matrix.equals(new Vector(new double[]{1, 2})));
+        assertFalse(matrix.equals(new double[][]{{1, 2}}));
+    }
+    @Test
+    void equalsTreatsPositiveAndNegativeZeroAsTheSameEntry() {
+        var positive = new Matrix(new double[][]{{0.0, 1}, {2, 0.0}});
+        var negative = new Matrix(new double[][]{{-0.0, 1}, {2, -0.0}});
+        assertEquals(positive, negative);
+        assertEquals(negative, positive);
+        assertEquals(positive.hashCode(), negative.hashCode());
+    }
+    // Scaling a row of zeros by a negative factor leaves -0.0 entries, which must not make a matrix differ.
+    @Test
+    void aMatrixWithNegativeZeroEntriesEqualsTheIdentity() {
+        assertEquals(identity(2), new Matrix(new double[][]{{1, -0.0}, {-0.0, 1}}));
+    }
+    @Test
+    void equalsHoldsBetweenAMatrixAndItsCopyAndDoubleTranspose() {
+        Random random = new Random(10);
+        for (int trial = 0; trial < 100; trial++) {
+            var matrix = new Matrix(randomData(random, 1 + random.nextInt(5), 1 + random.nextInt(5), 5));
+            assertEquals(matrix, matrix.copy());
+            assertEquals(matrix, matrix.transpose().transpose());
+            assertEquals(matrix.hashCode(), matrix.copy().hashCode());
+        }
+    }
+    @Test
+    void equalsAndHashCodeAgreeWithEntrywiseComparisonOnRandomMatrices() {
+        Random random = new Random(11);
+        for (int trial = 0; trial < 500; trial++) {
+            int rows = 1 + random.nextInt(4);
+            int cols = 1 + random.nextInt(4);
+            double[][] data = randomData(random, rows, cols, 2);
+            double[][] other = new double[rows][];
+            for (int i = 0; i < rows; i++) {
+                other[i] = data[i].clone();
+            }
+            if (random.nextBoolean()) {
+                other[random.nextInt(rows)][random.nextInt(cols)] += 1;
+            }
+            boolean expected = Arrays.deepEquals(data, other);
+            var matrix = new Matrix(data);
+            var otherMatrix = new Matrix(other);
+            assertEquals(expected, matrix.equals(otherMatrix));
+            assertEquals(expected, otherMatrix.equals(matrix));
+            if (expected) {
+                assertEquals(matrix.hashCode(), otherMatrix.hashCode());
+            }
+        }
+    }
+    @Test
+    void equalMatricesAreInterchangeableAsHashKeys() {
+        Set<Matrix> matrices = new HashSet<>();
+        matrices.add(new Matrix(sampleData()));
+        assertTrue(matrices.contains(new Matrix(sampleData())));
+        assertFalse(matrices.contains(identity(2)));
+        matrices.add(new Matrix(sampleData()));
+        assertEquals(1, matrices.size());
+    }
+    @Test
+    void equalityOnACorruptedMatrixIsRejected() {
+        var healthy = new Matrix(sampleData());
+        var withNaN = new Matrix(sampleData());
+        withNaN.data()[0][0] = Double.NaN;
+        assertThrows(IllegalStateException.class, () -> withNaN.equals(healthy));
+        assertThrows(IllegalStateException.class, () -> healthy.equals(withNaN));
+        assertThrows(IllegalStateException.class, () -> withNaN.equals(withNaN));
+        assertThrows(IllegalStateException.class, withNaN::hashCode);
+
+        var withEmptyRow = new Matrix(sampleData());
+        withEmptyRow.data()[0] = new double[0];
+        assertThrows(IllegalStateException.class, () -> withEmptyRow.equals(healthy));
+        assertThrows(IllegalStateException.class, () -> healthy.equals(withEmptyRow));
+        assertThrows(IllegalStateException.class, withEmptyRow::hashCode);
     }
 
     // ---------- corrupted state ----------

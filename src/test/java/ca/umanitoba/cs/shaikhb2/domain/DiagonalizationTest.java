@@ -5,9 +5,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class DiagonalizationTest {
 
@@ -79,6 +80,77 @@ class DiagonalizationTest {
         assertThrows(IllegalStateException.class, () -> new Diagonalization(sampleP(), below, sampleInverseP()));
     }
 
+    // ---------- equals and hashCode ----------
+
+    @Test
+    void equalsHoldsForDiagonalizationsWithTheSameMatrices() {
+        var diagonalization = sampleDiagonalization();
+        var same = sampleDiagonalization();
+        assertEquals(diagonalization, diagonalization);
+        assertEquals(diagonalization, same);
+        assertEquals(same, diagonalization);
+        assertEquals(diagonalization.hashCode(), same.hashCode());
+    }
+    @Test
+    void equalsFailsWhenAnyOfTheThreeMatricesDiffers() {
+        var diagonalization = sampleDiagonalization();
+        var other = new Matrix(new double[][]{{5, 0}, {0, 7}});
+        assertNotEquals(diagonalization, new Diagonalization(other, diagonalization.D(), diagonalization.inverseP()));
+        assertNotEquals(diagonalization, new Diagonalization(diagonalization.P(), other, diagonalization.inverseP()));
+        assertNotEquals(diagonalization, new Diagonalization(diagonalization.P(), diagonalization.D(), other));
+    }
+    @Test
+    void equalsFailsWhenPAndTheInverseOfPAreSwapped() {
+        var diagonalization = sampleDiagonalization();
+        var swapped = new Diagonalization(diagonalization.inverseP(), diagonalization.D(), diagonalization.P());
+        assertNotEquals(diagonalization, swapped);
+        assertNotEquals(swapped, diagonalization);
+    }
+    @Test
+    void equalsFailsForNullAndForOtherTypes() {
+        var diagonalization = sampleDiagonalization();
+        assertFalse(diagonalization.equals(null));
+        assertFalse(diagonalization.equals("diagonalization"));
+        assertFalse(diagonalization.equals(diagonalization.P()));
+    }
+    @Test
+    void equalsTreatsNegativeZeroLikeZero() {
+        var diagonalization = sampleDiagonalization();
+        var negativeZeros = new Diagonalization(
+                diagonalization.P(),
+                new Matrix(new double[][]{{2, -0.0}, {-0.0, 3}}),
+                diagonalization.inverseP());
+        assertEquals(diagonalization, negativeZeros);
+        assertEquals(diagonalization.hashCode(), negativeZeros.hashCode());
+    }
+    @Test
+    void equalsIsUnaffectedByLaterChangesToTheArraysItWasBuiltFrom() {
+        double[][] pData = {{1, 1}, {0, 1}};
+        var diagonalization = new Diagonalization(
+                new Matrix(pData), new Matrix(new double[][]{{2, 0}, {0, 3}}), new Matrix(new double[][]{{1, -1}, {0, 1}}));
+        pData[0][0] = 99;
+        assertEquals(sampleDiagonalization(), diagonalization);
+    }
+    @Test
+    void equalDiagonalizationsAreInterchangeableAsHashKeys() {
+        Set<Diagonalization> diagonalizations = new HashSet<>();
+        diagonalizations.add(sampleDiagonalization());
+        assertTrue(diagonalizations.contains(sampleDiagonalization()));
+        diagonalizations.add(sampleDiagonalization());
+        assertEquals(1, diagonalizations.size());
+    }
+    @Test
+    void equalityOnACorruptedDiagonalizationIsRejected() {
+        var healthy = sampleDiagonalization();
+        for (int which = 0; which < 3; which++) {
+            var corrupted = sampleDiagonalization();
+            Matrix[] matrices = {corrupted.P(), corrupted.D(), corrupted.inverseP()};
+            matrices[which].data()[0][0] = Double.NaN;
+            assertThrows(IllegalStateException.class, () -> corrupted.equals(healthy));
+            assertThrows(IllegalStateException.class, corrupted::hashCode);
+        }
+    }
+
     // ---------- helpers ----------
 
     // A fresh matrix each call, so tests can mutate one copy and compare against another.
@@ -91,6 +163,7 @@ class DiagonalizationTest {
     private static Matrix sampleInverseP() {
         return new Matrix(new double[][]{{1, -1}, {0, 1}});
     }
+    // Helper to assert that a matrix has the expected values, with a clear message on failure.
     private static void assertMatrixEquals(
             double[][] expected,
             Matrix actual
@@ -103,4 +176,12 @@ class DiagonalizationTest {
             }
         }
     }
+    // A diagonalization of an upper triangular matrix: P D P^-1 with D = diag(2, 3).
+    private static Diagonalization sampleDiagonalization() {
+        return new Diagonalization(
+                new Matrix(new double[][]{{1, 1}, {0, 1}}),
+                new Matrix(new double[][]{{2, 0}, {0, 3}}),
+                new Matrix(new double[][]{{1, -1}, {0, 1}}));
+    }
+
 }
