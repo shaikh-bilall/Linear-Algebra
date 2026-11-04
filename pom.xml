@@ -1,8 +1,9 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>java.project</groupId>
-    <artifactId>LinearAlgebra</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>github.shaikh-bilall</groupId>
+    <artifactId>linear-algebra</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
@@ -27,4 +28,11 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/shaikh-bilall/Linear-Algebra</url>
+        </repository>
+    </distributionManagement>
 </project>

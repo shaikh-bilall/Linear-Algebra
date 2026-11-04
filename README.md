@@ -20,8 +20,8 @@ The project is organized as a library: data types live in `domain`, the algorith
 
 | Type | What it is |
 | --- | --- |
-| `Matrix` | A rectangular matrix of finite real numbers (at least 1x1). Supports `get`, `getRow`, `rows`, `cols`, `copy`, `transpose`, `multiply` by a vector, `merge` (placing another matrix to the right, as in an augmented matrix `[A \| b]`), and `permuteRows`. |
-| `Vector` | A vector of finite real numbers. Supports `add`, `scale`, `dot`, `norm`, `permute`, `get`, `length`, and iteration over its entries. It can be created from an array or as a zero vector of a given size. |
+| `Matrix` | A rectangular matrix of finite real numbers (at least 1x1). |
+| `Vector` | A vector of finite real numbers. It can be created from an array or as a zero vector of a given size. |
 | `Diagonalization` | The result of diagonalizing `A`: the matrices `P`, `D` and `P^-1` in `A = P D P^-1`. |
 | `OperationRREF`, `Type1`, `Type2`, `Type3` | The elementary row operations as objects: swap two rows (`Type1`), multiply a row by a nonzero scalar (`Type2`), and add a multiple of one row to another (`Type3`). Each can be applied to a matrix or, entry by entry, to a vector. |
 
@@ -43,7 +43,7 @@ The row reduction is worked out once, when the `MatrixLogic` is created, and reu
 
 **`DiagonalizationLogic`** factors a real square matrix as `A = P D P^-1`:
 
-- The columns of `P` are unit eigenvectors, and `D` holds the matching eigenvalues on its diagonal. Eigenvalues are ordered by decreasing magnitude, and the larger value comes first when two have the same magnitude. This puts the eigenvalue 1 of a Markov chain first, even when -1 is also an eigenvalue.
+- The columns of `P` are unit eigenvectors, and `D` holds the matching eigenvalues on its diagonal. Eigenvalues are ordered by decreasing magnitude, and the larger value comes first when two have the same magnitude.
 - Works on non-symmetric matrices, and handles repeated eigenvalues as long as there are enough independent eigenvectors.
 - Works entirely in real numbers. A matrix with complex eigenvalues, or a defective matrix (an eigenvalue with fewer independent eigenvectors than its multiplicity), has no real diagonalization and is rejected with a `NotDiagonalizableException`.
 - `P^-1` is returned with the result, so powers `A^k = P D^k P^-1` do not need a second inverse.
@@ -176,7 +176,7 @@ Any of these work once the project is open (see the steps above):
 
 ## Using the library
 
-The pattern is the same throughout: wrap your numbers in a `Matrix` or `Vector`, hand the matrix to the logic class that does the work, and read the result from the returned object. `MatrixLogic` takes a `Matrix` and answers questions about it, `DiagonalizationLogic` takes a square `Matrix` and returns a `Diagonalization`, and `VectorLogic` and the static methods of `MatrixLogic` modify a vector or matrix in place. The checked exceptions listed above tell you when a request has no answer, for example an inverse that does not exist. `Main` shows each of these end to end.
+The pattern is the same throughout: wrap your numbers in a `Matrix` or `Vector`, hand the matrix to the logic class that does the work, and read the result from the returned object. `MatrixLogic` takes a `Matrix` and answers questions about it, `DiagonalizationLogic` takes a square `Matrix` and returns a `Diagonalization`, `VectorLogic` and the static methods of `MatrixLogic` modify a vector or matrix in place. The checked exceptions listed above tell you when a request has no answer, for example an inverse that does not exist. `Main` shows each of these end to end.
 
 Every public class and method has Javadoc. In IntelliJ, press **Ctrl+Q** on a name (or hover over it) to read it.
 
