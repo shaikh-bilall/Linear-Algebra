@@ -1,4 +1,4 @@
-package domain;
+package linearAlgebra.domain;
 
 import com.google.common.base.Preconditions;
 
@@ -47,15 +47,17 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
         if (this == otherObject) {
             return true;
         }
-        if (!(otherObject instanceof Diagonalization otherDiagonalization)) {
+        if (!(otherObject instanceof Diagonalization(Matrix p, Matrix d, Matrix inverseP1))) {
             return false;
         }
-        return P.equals(otherDiagonalization.P)
-                && D.equals(otherDiagonalization.D)
-                && inverseP.equals(otherDiagonalization.inverseP);
+        return (
+            P.equals(p) &&
+            D.equals(d) &&
+            inverseP.equals(inverseP1)
+        );
     }
     /**
-     * Returns a hash code that agrees with {@link #equals}: diagonalizations that are equal have the same hash code.
+     * Returns a hash code that agrees with {@link #equals}.
      *
      * @return the hash code of the three matrices
      * @throws IllegalStateException if one of the matrices was corrupted through {@code data()}

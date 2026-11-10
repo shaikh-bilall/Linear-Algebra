@@ -1,6 +1,6 @@
-package logic;
+package linearAlgebra.logic;
 
-import domain.Vector;
+import linearAlgebra.domain.Vector;
 import com.google.common.base.Preconditions;
 
 /**

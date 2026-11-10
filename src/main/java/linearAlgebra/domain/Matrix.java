@@ -1,4 +1,4 @@
-package domain;
+package linearAlgebra.domain;
 
 import com.google.common.base.Preconditions;
 

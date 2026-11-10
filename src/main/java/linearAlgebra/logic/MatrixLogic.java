@@ -1,11 +1,13 @@
-package logic;
+package linearAlgebra.logic;
 
-import domain.Exceptions.*;
-import domain.Matrix;
-import domain.RREF.OperationRREF;
-import domain.RREF.Type1;
-import domain.RREF.Type2;
-import domain.RREF.Type3;
+import linearAlgebra.domain.Exceptions.DeterminantDoesNotExistException;
+import linearAlgebra.domain.Exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.domain.Exceptions.InverseNotAvailableException;
+import linearAlgebra.domain.Matrix;
+import linearAlgebra.domain.RREF.OperationRREF;
+import linearAlgebra.domain.RREF.Type1;
+import linearAlgebra.domain.RREF.Type2;
+import linearAlgebra.domain.RREF.Type3;
 import com.google.common.base.Preconditions;
 
 import java.util.ArrayList;

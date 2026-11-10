@@ -48,7 +48,7 @@ The row reduction is worked out once, when the `MatrixLogic` is created, and reu
 - Works entirely in real numbers. A matrix with complex eigenvalues, or a defective matrix (an eigenvalue with fewer independent eigenvectors than its multiplicity), has no real diagonalization and is rejected with a `NotDiagonalizableException`.
 - `P^-1` is returned with the result, so powers `A^k = P D^k P^-1` do not need a second inverse.
 
-### Exceptions (`domain.Exceptions`)
+### Exceptions (`linearAlgebra.domain`)
 
 | Exception | When it is thrown |
 | --- | --- |
@@ -81,7 +81,7 @@ src
 ├── main
 │   └── java
 │       ├── Main.java                         Sample problems
-│       ├── domain
+│       ├── linearAlgebra.domain
 │       │   ├── Diagonalization.java
 │       │   ├── Matrix.java
 │       │   ├── Vector.java
@@ -95,18 +95,18 @@ src
 │       │       ├── Type1.java                Swap two rows
 │       │       ├── Type2.java                Scale a row
 │       │       └── Type3.java                Add a multiple of a row to another
-│       └── logic
+│       └── linearAlgebra.logic
 │           ├── DiagonalizationLogic.java
 │           ├── MatrixLogic.java
 │           └── VectorLogic.java
 └── test
     └── java
         ├── RunAllTests.java                  Runs every test and prints a summary
-        ├── domain
+        ├── linearAlgebra.domain
         │   ├── DiagonalizationTest.java
         │   ├── MatrixTest.java
         │   └── VectorTest.java
-        └── logic
+        └── linearAlgebra.logic
             ├── DiagonalizationLogicTest.java
             ├── MatrixLogicTest.java
             └── VectorLogicTest.java
@@ -176,7 +176,7 @@ Any of these work once the project is open (see the steps above):
 
 ## Using the library
 
-The pattern is the same throughout: wrap your numbers in a `Matrix` or `Vector`, hand the matrix to the logic class that does the work, and read the result from the returned object. `MatrixLogic` takes a `Matrix` and answers questions about it, `DiagonalizationLogic` takes a square `Matrix` and returns a `Diagonalization`, `VectorLogic` and the static methods of `MatrixLogic` modify a vector or matrix in place. The checked exceptions listed above tell you when a request has no answer, for example an inverse that does not exist. `Main` shows each of these end to end.
+The pattern is the same throughout: wrap your numbers in a `Matrix` or `Vector`, hand the matrix to the linearAlgebra.logic class that does the work, and read the result from the returned object. `MatrixLogic` takes a `Matrix` and answers questions about it, `DiagonalizationLogic` takes a square `Matrix` and returns a `Diagonalization`, `VectorLogic` and the static methods of `MatrixLogic` modify a vector or matrix in place. The checked exceptions listed above tell you when a request has no answer, for example an inverse that does not exist. `Main` shows each of these end to end.
 
 Every public class and method has Javadoc. In IntelliJ, press **Ctrl+Q** on a name (or hover over it) to read it.
 

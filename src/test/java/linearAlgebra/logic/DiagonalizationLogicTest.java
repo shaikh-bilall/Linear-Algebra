@@ -1,8 +1,8 @@
-package logic;
+package linearAlgebra.logic;
 
-import domain.Diagonalization;
-import domain.Exceptions.NotDiagonalizableException;
-import domain.Matrix;
+import linearAlgebra.domain.Diagonalization;
+import linearAlgebra.domain.Exceptions.NotDiagonalizableException;
+import linearAlgebra.domain.Matrix;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -935,7 +935,7 @@ class DiagonalizationLogicTest {
                     "eigenvalue " + i + " of " + label + ": expected " + Arrays.toString(expected) + " but was " + Arrays.toString(values));
         }
     }
-    // The order the logic promises: largest magnitude first, the larger value first when magnitudes tie.
+    // The order the linearAlgebra.logic promises: largest magnitude first, the larger value first when magnitudes tie.
     private static double[] ordered(
             final double[] eigenvalues
     ) {

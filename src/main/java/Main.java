@@ -1,10 +1,10 @@
-import domain.Diagonalization;
-import domain.Exceptions.InverseNotAvailableException;
-import domain.Exceptions.MatrixMultiplyDimMismatchException;
-import domain.Exceptions.NotDiagonalizableException;
-import domain.Matrix;
-import logic.DiagonalizationLogic;
-import logic.MatrixLogic;
+import linearAlgebra.domain.Diagonalization;
+import linearAlgebra.domain.Exceptions.InverseNotAvailableException;
+import linearAlgebra.domain.Exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.domain.Exceptions.NotDiagonalizableException;
+import linearAlgebra.domain.Matrix;
+import linearAlgebra.logic.DiagonalizationLogic;
+import linearAlgebra.logic.MatrixLogic;
 
 import java.util.Locale;
 

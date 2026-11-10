@@ -1,4 +1,4 @@
-package domain;
+package linearAlgebra.domain;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -73,7 +73,7 @@ class MatrixTest {
         assertEquals(rows, matrix.rows());
         assertEquals(cols, matrix.cols());
     }
-    // The logic classes mutate matrices through data(), so the accessor must hand out the live array.
+    // The linearAlgebra.logic classes mutate matrices through data(), so the accessor must hand out the live array.
     @Test
     void dataExposesTheLiveStorage() {
         var matrix = new Matrix(sampleData());

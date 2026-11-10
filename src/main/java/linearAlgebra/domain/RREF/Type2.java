@@ -1,9 +1,9 @@
-package domain.RREF;
+package linearAlgebra.domain.RREF;
 
-import domain.Matrix;
-import domain.Vector;
-import logic.MatrixLogic;
-import logic.VectorLogic;
+import linearAlgebra.domain.Matrix;
+import linearAlgebra.domain.Vector;
+import linearAlgebra.logic.MatrixLogic;
+import linearAlgebra.logic.VectorLogic;
 
 /**
  * The elementary operation that multiplies a row by a nonzero scalar.

@@ -1,10 +1,10 @@
-package logic;
+package linearAlgebra.logic;
 
-import domain.Diagonalization;
-import domain.Exceptions.InverseNotAvailableException;
-import domain.Exceptions.NotDiagonalizableException;
-import domain.Matrix;
-import domain.Vector;
+import linearAlgebra.domain.Diagonalization;
+import linearAlgebra.domain.Exceptions.InverseNotAvailableException;
+import linearAlgebra.domain.Exceptions.NotDiagonalizableException;
+import linearAlgebra.domain.Matrix;
+import linearAlgebra.domain.Vector;
 import com.google.common.base.Preconditions;
 
 import java.util.ArrayList;

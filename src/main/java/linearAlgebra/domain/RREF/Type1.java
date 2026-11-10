@@ -1,9 +1,9 @@
-package domain.RREF;
+package linearAlgebra.domain.RREF;
 
-import domain.Matrix;
-import domain.Vector;
-import logic.MatrixLogic;
-import logic.VectorLogic;
+import linearAlgebra.domain.Matrix;
+import linearAlgebra.domain.Vector;
+import linearAlgebra.logic.MatrixLogic;
+import linearAlgebra.logic.VectorLogic;
 
 /**
  * The elementary operation that swaps two rows.
@@ -11,7 +11,6 @@ import logic.VectorLogic;
  * @param sourceRow the zero-based index of one of the rows
  * @param targetRow the zero-based index of the other row
  */
-
 public record Type1(int sourceRow, int targetRow) implements OperationRREF {
 
     /**
@@ -24,7 +23,6 @@ public record Type1(int sourceRow, int targetRow) implements OperationRREF {
     @Override
     public void apply(Matrix A) {
         MatrixLogic.swapRows(A, sourceRow, targetRow);
-
     }
     /**
      * Swaps the two entries of a vector at the same indices, in place.

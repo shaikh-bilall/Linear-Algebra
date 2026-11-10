@@ -1,4 +1,4 @@
-package domain;
+package linearAlgebra.domain;
 
 import com.google.common.base.Preconditions;
 import org.jspecify.annotations.NonNull;
@@ -145,14 +145,14 @@ public record Vector(double[] data) implements Iterable<Double> {
         Preconditions.checkState(data.length > 0, "Vector must have at least one element");
         return data.length;
     }
-
     /**
      * Iterates over the entries in order.
      *
      * @return an iterator over the entries
      * @throws IllegalStateException if this vector is invalid
      */
-    @Override@NonNull
+    @Override
+    @NonNull
     public Iterator<Double> iterator() {
         checkVector();
         return new Iterator<>() {
@@ -172,7 +172,16 @@ public record Vector(double[] data) implements Iterable<Double> {
             }
         };
     }
-
+    /**
+     * Returns a new vector that is a copy of this one.
+     *
+     * @return a new vector with the same entries
+     * @throws IllegalStateException if this vector is invalid
+     */
+    public Vector copy() {
+        checkVector();
+        return new Vector(data.clone());
+    }
     /**
      * Compares this vector to another object for equality, entry by entry. Two vectors are equal when they have the
      * same length and every pair of matching entries is numerically equal, so {@code 0.0} and {@code -0.0} count as
@@ -206,6 +215,48 @@ public record Vector(double[] data) implements Iterable<Double> {
     public int hashCode() {
         checkVector();
         return entriesHashCode(data);
+    }
+    /**
+     * Tells whether two arrays have the same length and numerically equal entries, so {@code 0.0} equals {@code -0.0}.
+     *
+     * @param first  the first array
+     * @param second the second array
+     * @return {@code true} if the arrays have the same length and every pair of matching entries is equal
+     * @throws NullPointerException if either array is {@code null}
+     */
+    public static boolean entriesEqual(
+            final double[] first,
+            final double[] second
+    ) {
+        Preconditions.checkNotNull(first, "First array must not be null");
+        Preconditions.checkNotNull(second, "Second array must not be null");
+        if (first.length != second.length) {
+            return false;
+        }
+        for (int i = 0; i < first.length; i++) {
+            if (first[i] != second[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     * Returns a hash code of the entries of an array that agrees with {@link #entriesEqual}, so {@code 0.0} and
+     * {@code -0.0} give the same hash code.
+     *
+     * @param entries the array to hash
+     * @return the hash code
+     * @throws NullPointerException if {@code entries} is {@code null}
+     */
+    public static int entriesHashCode(
+            final double[] entries
+    ) {
+        Preconditions.checkNotNull(entries, "Entries must not be null");
+        int result = 1;
+        for (double entry : entries) {
+            result = 31 * result + Double.hashCode(entry + 0.0); // adding 0.0 turns -0.0 into 0.0
+        }
+        return result;
     }
 
     // Checks that the other vector is valid and of the same length as this one.
@@ -241,49 +292,6 @@ public record Vector(double[] data) implements Iterable<Double> {
     ) {
         Preconditions.checkArgument(size > 0, "Vector size must be positive");
         return new double[size];
-    }
-
-    /**
-     * Tells whether two arrays have the same length and numerically equal entries, so {@code 0.0} equals {@code -0.0}.
-     *
-     * @param first  the first array
-     * @param second the second array
-     * @return {@code true} if the arrays have the same length and every pair of matching entries is equal
-     * @throws NullPointerException if either array is {@code null}
-     */
-    static boolean entriesEqual(
-            final double[] first,
-            final double[] second
-    ) {
-        Preconditions.checkNotNull(first, "First array must not be null");
-        Preconditions.checkNotNull(second, "Second array must not be null");
-        if (first.length != second.length) {
-            return false;
-        }
-        for (int i = 0; i < first.length; i++) {
-            if (first[i] != second[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-    /**
-     * Returns a hash code of the entries of an array that agrees with {@link #entriesEqual}, so {@code 0.0} and
-     * {@code -0.0} give the same hash code.
-     *
-     * @param entries the array to hash
-     * @return the hash code
-     * @throws NullPointerException if {@code entries} is {@code null}
-     */
-    static int entriesHashCode(
-            final double[] entries
-    ) {
-        Preconditions.checkNotNull(entries, "Entries must not be null");
-        int result = 1;
-        for (double entry : entries) {
-            result = 31 * result + Double.hashCode(entry + 0.0); // adding 0.0 turns -0.0 into 0.0
-        }
-        return result;
     }
 
 }

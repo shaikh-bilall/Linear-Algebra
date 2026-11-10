@@ -1,4 +1,4 @@
-package domain;
+package linearAlgebra.domain;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -72,7 +72,7 @@ class VectorTest {
 
     // ---------- data ----------
 
-    // The logic classes mutate vectors through data(), so the accessor must hand out the live array.
+    // The linearAlgebra.logic classes mutate vectors through data(), so the accessor must hand out the live array.
     @Test
     void dataExposesTheLiveStorage() {
         var v = vector(1, 2, 3);

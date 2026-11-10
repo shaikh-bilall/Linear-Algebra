@@ -1,7 +1,7 @@
-package domain.RREF;
+package linearAlgebra.domain.RREF;
 
-import domain.Vector;
-import domain.Matrix;
+import linearAlgebra.domain.Vector;
+import linearAlgebra.domain.Matrix;
 
 /**
  * An elementary row operation. It acts on the rows of a matrix and, in the same way, on the entries of a vector, so a
