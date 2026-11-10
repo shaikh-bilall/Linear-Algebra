@@ -1,10 +1,10 @@
 package linearAlgebra.logic;
 
 import linearAlgebra.domain.Matrix;
-import linearAlgebra.domain.RREF.OperationRREF;
-import linearAlgebra.domain.RREF.Type1;
-import linearAlgebra.domain.RREF.Type2;
-import linearAlgebra.domain.RREF.Type3;
+import linearAlgebra.domain.rref.OperationRREF;
+import linearAlgebra.domain.rref.Type1;
+import linearAlgebra.domain.rref.Type2;
+import linearAlgebra.domain.rref.Type3;
 import linearAlgebra.domain.Vector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

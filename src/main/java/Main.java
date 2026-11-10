@@ -1,7 +1,7 @@
 import linearAlgebra.domain.Diagonalization;
-import linearAlgebra.domain.Exceptions.InverseNotAvailableException;
-import linearAlgebra.domain.Exceptions.MatrixMultiplyDimMismatchException;
-import linearAlgebra.domain.Exceptions.NotDiagonalizableException;
+import linearAlgebra.domain.exceptions.InverseNotAvailableException;
+import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.domain.exceptions.NotDiagonalizableException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.logic.DiagonalizationLogic;
 import linearAlgebra.logic.MatrixLogic;

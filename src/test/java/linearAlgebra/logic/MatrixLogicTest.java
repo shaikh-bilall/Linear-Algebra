@@ -1,11 +1,11 @@
 package linearAlgebra.logic;
 
-import linearAlgebra.domain.Exceptions.InverseNotAvailableException;
-import linearAlgebra.domain.Exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.domain.exceptions.InverseNotAvailableException;
+import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
-import linearAlgebra.domain.RREF.Type1;
-import linearAlgebra.domain.RREF.Type2;
-import linearAlgebra.domain.RREF.Type3;
+import linearAlgebra.domain.rref.Type1;
+import linearAlgebra.domain.rref.Type2;
+import linearAlgebra.domain.rref.Type3;
 import linearAlgebra.domain.Vector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

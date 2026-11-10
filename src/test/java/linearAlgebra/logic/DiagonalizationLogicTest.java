@@ -1,7 +1,7 @@
 package linearAlgebra.logic;
 
 import linearAlgebra.domain.Diagonalization;
-import linearAlgebra.domain.Exceptions.NotDiagonalizableException;
+import linearAlgebra.domain.exceptions.NotDiagonalizableException;
 import linearAlgebra.domain.Matrix;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

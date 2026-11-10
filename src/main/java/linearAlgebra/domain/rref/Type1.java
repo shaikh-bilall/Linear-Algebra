@@ -1,4 +1,4 @@
-package linearAlgebra.domain.RREF;
+package linearAlgebra.domain.rref;
 
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
