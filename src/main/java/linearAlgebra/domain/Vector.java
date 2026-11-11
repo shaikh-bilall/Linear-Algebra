@@ -12,21 +12,49 @@ import java.util.NoSuchElementException;
  * A vector of finite real numbers, with basic arithmetic: addition, scaling, dot product and length. It can be
  * iterated over entry by entry.
  *
- * @param data the entries in order; {@code data()} returns this array itself, not a copy
+ * @param data the entries in order; {@code data()} returns a copy of this array
  */
 public record Vector(double[] data) implements Iterable<Double> {
 
     public Vector(
-            final double[] data
+        final double[] data
     ) {
-        Preconditions.checkNotNull(data, "Vector data must not be null");
+        Preconditions.checkNotNull(
+            data,
+            "Vector data must not be null"
+        );
+        Preconditions.checkState(
+            data.length > 0,
+            "Vector must have at least one element"
+        );
+        Preconditions.checkState(
+            Arrays.stream(data).allMatch(Double::isFinite),
+            "All entries must be finite numbers"
+        );
         this.data = data.clone();
         checkVector();
     }
-    public Vector(int size) {
+    /**
+     * Creates a zero vector.
+     *
+     * @param size the number of entries, which must be positive
+     */
+    public Vector(
+        final int size
+    ) {
         this(zeros(size));
     }
 
+    /**
+     * Returns the entries in order.
+     *
+     * @return a copy of the entries; changing it does not affect this vector
+     */
+    @Override
+    public double[] data() {
+        checkVector();
+        return data.clone();
+    }
     /**
      * Returns the entrywise sum of this vector and another of the same length.
      *
@@ -36,8 +64,9 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws IllegalStateException if the lengths differ, the sum overflows, or either vector is invalid
      */
     public Vector add(
-            final Vector other
+        final Vector other
     ) {
+        checkVector();
         checkOtherVector(other);
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
@@ -53,8 +82,9 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws IllegalStateException if {@code scalar} is not finite, the product overflows, or this vector is invalid
      */
     public Vector scale(
-            final double scalar
+        final double scalar
     ) {
+        checkVector();
         Preconditions.checkState(Double.isFinite(scalar), "Scalar must be finite");
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
@@ -71,8 +101,9 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws IllegalStateException if the lengths differ, the result overflows, or either vector is invalid
      */
     public double dot(
-            final Vector other
+        final Vector other
     ) {
+        checkVector();
         checkOtherVector(other);
         double result = 0;
         for (int i = 0; i < data.length; i++) {
@@ -88,6 +119,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws IllegalStateException if the result overflows, or this vector is invalid
      */
     public double norm() {
+        checkVector();
         double norm = 0;
         for (double v : data) {
             norm = Math.hypot(norm, v); // hypot avoids overflowing on the intermediate squares
@@ -104,19 +136,20 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws IllegalStateException if the list is not a permutation of the indices, or this vector is invalid
      */
     public Vector permute(
-            final List<Integer> shuffledIndices
+        final List<Integer> shuffledIndices
     ) {
         checkVector();
-        Preconditions.checkNotNull(shuffledIndices, "Shuffled indices list must not be null");
-        Preconditions.checkState(shuffledIndices.size() == length(), "Shuffled indices list size must match the vector length");
-        checkPermutation(shuffledIndices);
+        Permutations.checkPermutation(
+            shuffledIndices,
+            data.length,
+            "Vector.permute"
+        );
 
-        double[] shuffledData = new double[length()];
-        for (int i = 0; i < length(); i++) {
+        double[] shuffledData = new double[data.length];
+        for (int i = 0; i < data.length; i++) {
             shuffledData[i] = data[shuffledIndices.get(i)];
         }
-
-        return new Vector(shuffledData); // post: same length, same entries in a new order
+        return new Vector(shuffledData);
     }
     /**
      * Returns a single entry.
@@ -126,8 +159,9 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws IllegalStateException if {@code index} is out of range, or this vector is invalid
      */
     public double get(
-            final int index
+        final int index
     ) {
+        checkVector();
         Preconditions.checkState(index >= 0, "Index must be non-negative");
         Preconditions.checkState(index < data.length, "Index out of bounds");
 
@@ -142,7 +176,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws IllegalStateException if this vector is invalid
      */
     public int length() {
-        Preconditions.checkState(data.length > 0, "Vector must have at least one element");
+        checkVector();
         return data.length;
     }
     /**
@@ -158,11 +192,21 @@ public record Vector(double[] data) implements Iterable<Double> {
         return new Iterator<>() {
             private int currentIndex = 0;
 
+            /**
+             * Tells whether another entry remains.
+             *
+             * @return {@code true} if {@link #next} would return an entry
+             */
             @Override
             public boolean hasNext() {
                 return currentIndex < data.length;
             }
 
+            /**
+             * Returns the next entry.
+             *
+             * @return the next entry
+             */
             @Override
             public Double next() {
                 if (!hasNext()) {
@@ -180,7 +224,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      */
     public Vector copy() {
         checkVector();
-        return new Vector(data.clone());
+        return new Vector(data);
     }
     /**
      * Compares this vector to another object for equality, entry by entry. Two vectors are equal when they have the
@@ -193,7 +237,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      */
     @Override
     public boolean equals(
-            final Object otherObject
+        final Object otherObject
     ) {
         checkVector();
         if (this == otherObject) {
@@ -225,8 +269,8 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws NullPointerException if either array is {@code null}
      */
     public static boolean entriesEqual(
-            final double[] first,
-            final double[] second
+        final double[] first,
+        final double[] second
     ) {
         Preconditions.checkNotNull(first, "First array must not be null");
         Preconditions.checkNotNull(second, "Second array must not be null");
@@ -249,7 +293,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @throws NullPointerException if {@code entries} is {@code null}
      */
     public static int entriesHashCode(
-            final double[] entries
+        final double[] entries
     ) {
         Preconditions.checkNotNull(entries, "Entries must not be null");
         int result = 1;
@@ -261,34 +305,27 @@ public record Vector(double[] data) implements Iterable<Double> {
 
     // Checks that the other vector is valid and of the same length as this one.
     private void checkOtherVector(
-            final Vector other
+        final Vector other
     ) {
         Preconditions.checkNotNull(other, "Other vector must not be null");
         Preconditions.checkState(other.length() > 0, "Other vector must have at least one element");
         Preconditions.checkState(other.length() == this.length(),
-                "Vectors must be of the same length: %s != %s", other.length(), this.length());
+            "Vectors must be of the same length: %s != %s", other.length(), this.length());
     }
-    // Checks that this vector is valid: non-null, non-empty, and all entries finite.
+    // Checks the cheap structural invariants: the data exists and has at least one entry.
     private void checkVector() {
-        Preconditions.checkNotNull(data, "Vector data must not be null");
-        Preconditions.checkState(data.length > 0, "Vector must have at least one element");
-        Preconditions.checkState(Arrays.stream(data).allMatch(Double::isFinite), "All entries must be finite numbers");
-    }
-    // The list must hold every index from 0 to length - 1 exactly once (its size is checked before this runs).
-    private void checkPermutation(
-            final List<Integer> indices
-    ) {
-        boolean[] seen = new boolean[length()];
-        for (Integer index : indices) {
-            Preconditions.checkNotNull(index, "Shuffled indices must not contain null");
-            Preconditions.checkState(index >= 0 && index < seen.length, "Shuffled index out of bounds: %s", index);
-            Preconditions.checkState(!seen[index], "Shuffled indices must not repeat: %s", index);
-            seen[index] = true;
-        }
+        Preconditions.checkState(
+            data != null,
+            "Vector data must not be null"
+        );
+        Preconditions.checkState(
+            data.length > 0,
+            "Vector must have at least one element"
+        );
     }
     // Returns a new array of the given size, filled with zeros.
     private static double[] zeros(
-            final int size
+        final int size
     ) {
         Preconditions.checkArgument(size > 0, "Vector size must be positive");
         return new double[size];

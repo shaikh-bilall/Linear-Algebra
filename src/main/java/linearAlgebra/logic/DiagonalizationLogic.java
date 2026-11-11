@@ -7,6 +7,7 @@ import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
 import linearAlgebra.domain.exceptions.DefectiveMatrixException;
 import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
 import linearAlgebra.domain.exceptions.InverseNotAvailableException;
+import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
 
@@ -39,7 +40,7 @@ public final class DiagonalizationLogic {
     private static final double SIGN_TIE_TOLERANCE = 1e-9;
 
     public DiagonalizationLogic(
-            final Matrix A
+        final Matrix A
     ) {
         Preconditions.checkNotNull(A, "Matrix must not be null");
         Preconditions.checkArgument(A.rows() == A.cols(), "Only square matrices can be diagonalized");
@@ -66,8 +67,8 @@ public final class DiagonalizationLogic {
         final double tolerance = CLUSTER_TOLERANCE * scale;
 
         // A = Q T Q^T with Q orthogonal and T upper triangular; both start as copies and are reduced in place.
-        final double[][] T = A.copy().data();
-        final double[][] Q = getIdentityData(n);
+        final double[][] T = A.data();
+        final double[][] Q = Matrix.identity(n).data();
         reduceToHessenberg(T, Q);
         reduceToSchur(T, Q, tolerance);
 
@@ -95,8 +96,8 @@ public final class DiagonalizationLogic {
 
     // Householder reflections H_k clear everything below the subdiagonal: H := H_k H H_k and Q := Q H_k.
     private static void reduceToHessenberg(
-            final double[][] H,
-            final double[][] Q
+        final double[][] H,
+        final double[][] Q
     ) {
         final int n = H.length;
         for (int k = 0; k < n - 2; k++) {
@@ -128,9 +129,9 @@ public final class DiagonalizationLogic {
     // the unreduced block still being iterated; everything below it has already split off. Every transformation is
     // applied to the whole of H (not just the window) and to Q, so that A = Q H Q^T holds throughout.
     private static void reduceToSchur(
-            final double[][] H,
-            final double[][] Q,
-            final double tolerance
+        final double[][] H,
+        final double[][] Q,
+        final double tolerance
     )
             throws ComplexEigenvaluesException
     {
@@ -169,11 +170,11 @@ public final class DiagonalizationLogic {
     // of the trailing 2x2 block, kept as their sum and product so the arithmetic stays real. A bulge of three
     // non-zeros is created at the top-left by the first reflector and chased down and off the bottom-right.
     private static void francisStep(
-            final double[][] H,
-            final double[][] Q,
-            final int low,
-            final int high,
-            final int iteration
+        final double[][] H,
+        final double[][] Q,
+        final int low,
+        final int high,
+        final int iteration
     ) {
         final int n = H.length;
 
@@ -225,10 +226,10 @@ public final class DiagonalizationLogic {
     // eigenvalues are complex (an imaginary part within the tolerance counts as a double real eigenvalue). The
     // rotation's first column is an eigenvector of the block, which makes the block upper triangular.
     private static void standardizeBlock(
-            final double[][] H,
-            final double[][] Q,
-            final int p,
-            final double tolerance
+        final double[][] H,
+        final double[][] Q,
+        final int p,
+        final double tolerance
     )
             throws ComplexEigenvaluesException
     {
@@ -283,8 +284,8 @@ public final class DiagonalizationLogic {
     // group. The groups are ordered by decreasing magnitude (the larger value first on a tie), so a Markov matrix's
     // eigenvalue 1 comes first even when -1 is also an eigenvalue.
     private static List<Cluster> getClusters(
-            final double[][] T,
-            final double tolerance
+        final double[][] T,
+        final double tolerance
     ) {
         final List<Integer> order = new ArrayList<>();
         for (int i = 0; i < T.length; i++) {
@@ -312,18 +313,18 @@ public final class DiagonalizationLogic {
         // Magnitudes are compared in steps of the tolerance, so that +1 and -1 tie even when rounding makes one of
         // them look slightly larger, and the larger value then goes first.
         clusters.sort(Comparator.comparingLong((Cluster cluster) -> Math.round(Math.abs(cluster.value()) / tolerance))
-                .thenComparingDouble(Cluster::value)
-                .reversed());
+            .thenComparingDouble(Cluster::value)
+            .reversed());
         return clusters;
     }
     // The eigenvectors of the cluster's eigenvalue lambda: a basis of the null space of T - lambda*I, taken from its
     // RREF, then carried back through Q (T y = lambda y gives A (Q y) = lambda (Q y)). Throws if the null space is
     // smaller than the number of times lambda repeats, because then A is defective.
     private static List<Vector> getEigenvectors(
-            final double[][] T,
-            final Matrix Q,
-            final Cluster cluster,
-            final double scale
+        final double[][] T,
+        final Matrix Q,
+        final Cluster cluster,
+        final double scale
     )
             throws DefectiveMatrixException
     {
@@ -365,7 +366,7 @@ public final class DiagonalizationLogic {
                     y[pivotColumn[row]] = -reduced.get(row, free);
                 }
             }
-            eigenvectors.add(normalize(Q.multiply(new Vector(y))));
+            eigenvectors.add(normalize(multiplyKnownDimensions(Q, new Vector(y))));
         }
 
         if (eigenvectors.size() < cluster.size()) {
@@ -375,7 +376,7 @@ public final class DiagonalizationLogic {
     }
     // Unit length, with the sign fixed so that the entry of largest magnitude is positive (the first one on a tie).
     private static Vector normalize(
-            final Vector v
+        final Vector v
     ) {
         final Vector unit = v.scale(1 / v.norm());
         int largest = 0;
@@ -390,9 +391,10 @@ public final class DiagonalizationLogic {
     // ---------- step 5: P must be invertible ----------
 
     // Every cluster already supplied as many independent eigenvectors as its multiplicity, so this can only fail if
-    // the eigenvectors of different eigenvalues come out dependent; it is the final word on diagonalizability.
+    // the eigenvectors of different eigenvalues come out dependent. The inverse failure is translated because its
+    // meaning changes here: for a matrix P it says "singular", for the caller it says the eigenvectors are dependent.
     private static Matrix getInverse(
-            final Matrix P
+        final Matrix P
     )
             throws DependentEigenvectorsException
     {
@@ -407,10 +409,21 @@ public final class DiagonalizationLogic {
 
     // ---------- helpers ----------
 
+    // Multiplies a matrix by a vector whose length is known to match its column count.
+    private static Vector multiplyKnownDimensions(
+        final Matrix matrix,
+        final Vector vector
+    ) {
+        try {
+            return matrix.multiply(vector);
+        } catch (MatrixMultiplyDimMismatchException e) {
+            throw new IllegalStateException("The dimensions were expected to match", e);
+        }
+    }
     // Turns x, in place, into the unit vector v for which (I - 2vv^T)x is a multiple of the first basis vector. Adding
     // the sign of x[0] times |x| to x[0] avoids cancellation. Returns false, leaving x alone, if x is zero.
     private static boolean toReflector(
-            final double[] x
+        final double[] x
     ) {
         double norm = 0;
         for (double entry : x) {
@@ -431,11 +444,11 @@ public final class DiagonalizationLogic {
     }
     // M := (I - 2vv^T) M on the rows row0 ... row0 + v.length - 1, restricted to the columns [col0, col1).
     private static void reflectRows(
-            final double[][] M,
-            final double[] v,
-            final int row0,
-            final int col0,
-            final int col1
+        final double[][] M,
+        final double[] v,
+        final int row0,
+        final int col0,
+        final int col1
     ) {
         for (int j = col0; j < col1; j++) {
             double dot = 0;
@@ -449,11 +462,11 @@ public final class DiagonalizationLogic {
     }
     // M := M (I - 2vv^T) on the columns col0 ... col0 + v.length - 1, restricted to the rows [row0, row1).
     private static void reflectColumns(
-            final double[][] M,
-            final double[] v,
-            final int col0,
-            final int row0,
-            final int row1
+        final double[][] M,
+        final double[] v,
+        final int col0,
+        final int row0,
+        final int row1
     ) {
         for (int r = row0; r < row1; r++) {
             double dot = 0;
@@ -467,12 +480,12 @@ public final class DiagonalizationLogic {
     }
     // M := M G on the columns p and p + 1, restricted to the rows [row0, row1), with G = [[cos, -sin], [sin, cos]].
     private static void rotateColumns(
-            final double[][] M,
-            final int p,
-            final int row0,
-            final int row1,
-            final double cos,
-            final double sin
+        final double[][] M,
+        final int p,
+        final int row0,
+        final int row1,
+        final double cos,
+        final double sin
     ) {
         for (int r = row0; r < row1; r++) {
             final double left = M[r][p];
@@ -483,7 +496,7 @@ public final class DiagonalizationLogic {
     }
     // The Frobenius norm of M, which is the square root of the sum of the squares of its entries.
     private static double getFrobeniusNorm(
-            final double[][] M
+        final double[][] M
     ) {
         double norm = 0;
         for (double[] row : M) {
@@ -495,25 +508,10 @@ public final class DiagonalizationLogic {
     }
     // The largest absolute entry of A, or 1 for the zero matrix so that dividing by it is always safe.
     private static double getScale(
-            final Matrix A
+        final Matrix A
     ) {
-        double maxAbs = 0;
-        for (int i = 0; i < A.rows(); i++) {
-            for (int j = 0; j < A.cols(); j++) {
-                maxAbs = Math.max(maxAbs, Math.abs(A.get(i, j)));
-            }
-        }
+        final double maxAbs = A.maxAbs();
         return (maxAbs == 0) ? 1 : maxAbs;
-    }
-    // The identity matrix of the given dimension, as a 2D array.
-    private static double[][] getIdentityData(
-            final int dimension
-    ) {
-        double[][] identityData = new double[dimension][dimension];
-        for (int i = 0; i < dimension; i++) {
-            identityData[i][i] = 1;
-        }
-        return identityData;
     }
 
 }

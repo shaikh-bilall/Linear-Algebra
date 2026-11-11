@@ -6,39 +6,26 @@ import linearAlgebra.domain.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.domain.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
-import linearAlgebra.domain.rref.OperationRREF;
+import linearAlgebra.domain.rref.RowReducer;
 import linearAlgebra.domain.rref.Type1;
 import linearAlgebra.domain.rref.Type2;
-import linearAlgebra.domain.rref.Type3;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Row-reduction based operations on a fixed matrix: RREF, determinant, inverse and product. The instance methods never
- * modify that matrix. The static methods are the elementary row operations, each of which modifies the matrix it is
- * given in place.
+ * Row-reduction based operations on a fixed matrix: RREF, determinant, inverse and product. The matrix is never
+ * modified.
  */
 public final class MatrixLogic {
 
-    // Relative to the largest absolute entry of the input; anything at or below this value counts as zero.
-    private static final double RELATIVE_TOLERANCE = 1e-10;
-
     private final Matrix A;
-    private final List<OperationRREF> operationsRREF;
-    private double determinant;
 
     public MatrixLogic(
-            final Matrix A
+        final Matrix A
     ) {
+        Preconditions.checkNotNull(
+            A,
+            "Matrix must not be null"
+        );
         this.A = A;
-        this.operationsRREF = getOperationsRREF(A.data());
-
-        try {
-            this.determinant = getDeterminant(A, operationsRREF);
-        } catch (DeterminantDoesNotExistException e) {
-            this.determinant = Double.NaN;
-        }
     }
 
     /**
@@ -50,9 +37,9 @@ public final class MatrixLogic {
      * @throws NullPointerException if {@code other} is {@code null}
      */
     public Matrix multiply(
-            final Matrix other
+        final Matrix other
     )
-            throws MatrixMultiplyDimMismatchException
+        throws MatrixMultiplyDimMismatchException
     {
         Preconditions.checkNotNull(other, "Other matrix must not be null");
 
@@ -60,32 +47,35 @@ public final class MatrixLogic {
             throw new MatrixMultiplyDimMismatchException();
         }
 
-        var resultData = new double[A.rows()][other.cols()];
+        final double[][] left = A.data();
+        final double[][] right = other.data();
+        final double[][] resultData = new double[left.length][right[0].length];
 
-        for (int i = 0; i < A.rows(); i++) {
-            for (int j = 0; j < other.cols(); j++) {
+        for (int i = 0; i < left.length; i++) {
+            for (int j = 0; j < right[0].length; j++) {
                 double sum = 0;
-                for (int k = 0; k < A.cols(); k++) {
-                    sum += A.get(i,k) * other.get(k,j);
+                for (int k = 0; k < right.length; k++) {
+                    sum += left[i][k] * right[k][j];
                 }
+                Preconditions.checkState(
+                    Double.isFinite(sum),
+                    "MatrixLogic.multiply: product entry must be finite: row %s, column %s",
+                    i,
+                    j
+                );
                 resultData[i][j] = sum;
             }
         }
-
 
         return new Matrix(resultData);
     }
     /**
      * Returns the reduced row echelon form of the matrix.
      *
-     * @return a new matrix in reduced row echelon form
+     * @return a matrix in reduced row echelon form
      */
     public Matrix rref() {
-        var rrefMatrix = A.copy();
-        for (var operation : operationsRREF) {
-            operation.apply(rrefMatrix);
-        }
-        return rrefMatrix;
+        return RowReducer.reduce(A).reduced();
     }
     /**
      * Returns the inverse of the matrix.
@@ -94,195 +84,40 @@ public final class MatrixLogic {
      * @throws InverseNotAvailableException if the matrix is not square or is singular
      */
     public Matrix inverse()
-            throws InverseNotAvailableException
+        throws InverseNotAvailableException
     {
-        if ((A.rows() != A.cols()) || (determinant == 0)) {
+        if (A.rows() != A.cols()) {
             throw new InverseNotAvailableException();
         }
-        var inverse = getIdentity(A.rows());
-        for (var operation : operationsRREF) {
-            operation.apply(inverse);
+
+        final RowReducer.Reduction reduction = RowReducer.reduce(A);
+        if (getDeterminant(reduction) == 0) {
+            throw new InverseNotAvailableException();
         }
-        return inverse;
+        return RowReducer.applyAll(reduction.operations(), Matrix.identity(A.rows()));
     }
     /**
      * Returns the determinant of the matrix.
      *
-     * @return the determinant: 0 for a singular matrix, and {@code NaN} for a matrix that is not square
+     * @return the determinant, which is 0 for a singular matrix
+     * @throws DeterminantDoesNotExistException if the matrix is not square
      */
-    public double determinant() {
-        return determinant;
-    }
-    /**
-     * Swaps two rows of a matrix, in place.
-     *
-     * @param A         the matrix to modify
-     * @param sourceRow the zero-based index of one of the rows
-     * @param targetRow the zero-based index of the other row
-     * @throws NullPointerException     if {@code A} is null
-     * @throws IllegalArgumentException if either row index is out of range
-     */
-    public static void swapRows(
-            final Matrix A, final int sourceRow, final int targetRow
-    ) {
-        Preconditions.checkNotNull(A, "Matrix must not be null");
-        Preconditions.checkArgument(sourceRow >= 0, "Source row index must be non-negative");
-        Preconditions.checkArgument(sourceRow < A.rows(), "Source row index out of bounds");
-        Preconditions.checkArgument(targetRow >= 0, "Target row index must be non-negative");
-        Preconditions.checkArgument(targetRow < A.rows(), "Target row index out of bounds");
-
-        double[] temp = A.data()[sourceRow];
-        A.data()[sourceRow] = A.data()[targetRow];
-        A.data()[targetRow] = temp;
-    }
-    /**
-     * Multiplies every entry of a row by a scalar, in place.
-     *
-     * @param A         the matrix to modify
-     * @param targetRow the zero-based index of the row to scale
-     * @param scalar    the factor, which must be nonzero and finite
-     * @throws NullPointerException     if {@code A} is null
-     * @throws IllegalArgumentException if {@code targetRow} is out of range, or {@code scalar} is zero or not finite
-     */
-    public static void multiplyRow(
-            final Matrix A, final int targetRow, final double scalar
-    ) {
-        Preconditions.checkNotNull(A, "Matrix must not be null");
-        Preconditions.checkArgument(targetRow >= 0, "Target row index must be non-negative");
-        Preconditions.checkArgument(targetRow < A.rows(), "Target row index out of bounds");
-        Preconditions.checkArgument(scalar != 0, "Scalar must be non-zero");
-        Preconditions.checkArgument(Double.isFinite(scalar), "Scalar must be finite");
-
-        for (int j = 0; j < A.cols(); j++) {
-            A.data()[targetRow][j] *= scalar;
-        }
-    }
-    /**
-     * Adds a multiple of one row to another row, in place.
-     *
-     * @param A         the matrix to modify
-     * @param sourceRow the zero-based index of the row whose multiple is added; it is left unchanged
-     * @param targetRow the zero-based index of the row that receives the multiple
-     * @param scalar    the multiple, which must be nonzero and finite
-     * @throws NullPointerException     if {@code A} is null
-     * @throws IllegalArgumentException if either row index is out of range, the two rows are the same, or
-     *                                  {@code scalar} is zero or not finite
-     */
-    public static void reduceRow(
-            final Matrix A, final int sourceRow, final int targetRow, final double scalar
-    ) {
-        Preconditions.checkNotNull(A, "Matrix must not be null");
-        Preconditions.checkArgument(sourceRow < A.rows(), "Source row index out of bounds");
-        Preconditions.checkArgument(sourceRow >= 0, "Source row index must be non-negative");
-        Preconditions.checkArgument(targetRow < A.rows(), "Target row index out of bounds");
-        Preconditions.checkArgument(targetRow >= 0, "Target row index must be non-negative");
-        Preconditions.checkArgument(sourceRow != targetRow, "Source and target rows must differ");
-        Preconditions.checkArgument(scalar != 0, "Scalar must be non-zero");
-        Preconditions.checkArgument(Double.isFinite(scalar), "Scalar must be finite");
-
-        for (int j = 0; j < A.cols(); j++) {
-            A.data()[targetRow][j] += scalar * A.data()[sourceRow][j];
-        }
-    }
-
-    // Returns the sequence of operations that would reduce the matrix to RREF, without modifying the matrix itself.
-    private static List<OperationRREF> getOperationsRREF(
-            final double[][] data
-    ) {
-        final List<OperationRREF> operations = new ArrayList<>();
-
-        // Matrix's constructor deep-copies, so the caller's array (A.data()) is never modified.
-        final Matrix working = new Matrix(data);
-        final double tolerance = getTolerance(working);
-
-        int pivotRow = 0;
-        for (int pivotCol = 0; pivotCol < working.cols() && pivotRow < working.rows(); pivotCol++) {
-            final int bestRow = findPivotRow(working, pivotRow, pivotCol, tolerance);
-            if (bestRow == -1) {
-                continue; // no usable pivot in this column: move right, stay on the same row
-            }
-
-            if (bestRow != pivotRow) {
-                applyAndRecord(working, operations, new Type1(pivotRow, bestRow));
-            }
-
-            final double pivot = working.get(pivotRow, pivotCol);
-            if (pivot != 1.0) {
-                applyAndRecord(working, operations, new Type2(pivotRow, 1.0 / pivot));
-            }
-
-            eliminateColumn(working, operations, pivotRow, pivotCol, tolerance);
-            pivotRow++;
-        }
-
-        return operations;
-    }
-    // Applies the operation to the working copy and logs it. This is the same apply() path that
-    // rref() and inverse() replay later, so the simulation and the log can't drift apart.
-    private static void applyAndRecord(
-            final Matrix working,
-            final List<OperationRREF> operations,
-            final OperationRREF operation
-    ) {
-        operation.apply(working);
-        operations.add(operation);
-    }
-    // Partial pivoting: largest magnitude in the column at or below startRow.
-    // Ties go to the upper row (fewer swaps). Returns -1 if nothing exceeds the tolerance.
-    private static int findPivotRow(
-            final Matrix A,
-            final int startRow,
-            final int col,
-            final double tolerance
-    ) {
-        int bestRow = -1;
-        double bestMagnitude = tolerance;
-        for (int row = startRow; row < A.rows(); row++) {
-            final double magnitude = Math.abs(A.get(row, col));
-            if (magnitude > bestMagnitude) {
-                bestMagnitude = magnitude;
-                bestRow = row;
-            }
-        }
-        return bestRow;
-    }
-    // Clears every other entry in the pivot column, above and below (Gauss-Jordan).
-    private static void eliminateColumn(
-            final Matrix working,
-            final List<OperationRREF> operations,
-            final int pivotRow,
-            final int pivotCol,
-            final double tolerance
-    ) {
-        // Read the actual pivot rather than assuming 1: after Type2 it can be 1 +/- an ulp.
-        final double pivot = working.get(pivotRow, pivotCol);
-        for (int row = 0; row < working.rows(); row++) {
-            if (row == pivotRow) {
-                continue;
-            }
-            final double entry = working.get(row, pivotCol);
-            if (Math.abs(entry) > tolerance) {
-                applyAndRecord(working, operations, new Type3(pivotRow, row, -entry / pivot));
-            }
-        }
-    }
-    // Returns the determinant of a square matrix, or throws if the matrix is not square. The determinant is computed
-    private static double getDeterminant(
-            final Matrix A,
-            final List<OperationRREF> operationsRREF
-    )
-            throws DeterminantDoesNotExistException
+    public double determinant()
+        throws DeterminantDoesNotExistException
     {
         if (A.rows() != A.cols()) {
             throw new DeterminantDoesNotExistException();
         }
+        return getDeterminant(RowReducer.reduce(A));
+    }
 
+    // Returns the determinant of a reduced square matrix, computed from the recorded operations.
+    private static double getDeterminant(
+        final RowReducer.Reduction reduction
+    ) {
         // A square matrix is singular iff its RREF is not the identity (some column got no pivot).
         // In that case the first pivotless column leaves a 0 on the diagonal.
-        var reduced = A.copy();
-        for (var operation : operationsRREF) {
-            operation.apply(reduced);
-        }
+        final Matrix reduced = reduction.reduced();
         for (int i = 0; i < reduced.rows(); i++) {
             if (Math.abs(reduced.get(i, i)) < 0.5) {
                 return 0;
@@ -292,7 +127,7 @@ public final class MatrixLogic {
         // RREF(A) = I and det(I) = 1. Type1 flips the sign, Type2 scales the determinant
         // by its scalar, Type3 leaves it unchanged. So det(A) = (-1)^swaps / product(scalars).
         double determinant = 1;
-        for (var operation : operationsRREF) {
+        for (var operation : reduction.operations()) {
             if (operation instanceof Type1) {
                 determinant = -determinant;
             } else if (operation instanceof Type2 scale) {
@@ -300,28 +135,6 @@ public final class MatrixLogic {
             }
         }
         return determinant;
-    }
-    // Returns the identity matrix of the given dimension.
-    private static Matrix getIdentity(
-            final int dimension
-    ) {
-        double[][] identityData = new double[dimension][dimension];
-        for (int i = 0; i < dimension; i++) {
-            identityData[i][i] = 1;
-        }
-        return new Matrix(identityData);
-    }
-    // Returns a tolerance for zero, relative to the largest absolute entry of the matrix. This is used to avoid
-    private static double getTolerance(
-            final Matrix A
-    ) {
-        double maxAbs = 0;
-        for (int i = 0; i < A.rows(); i++) {
-            for (int j = 0; j < A.cols(); j++) {
-                maxAbs = Math.max(maxAbs, Math.abs(A.get(i, j)));
-            }
-        }
-        return RELATIVE_TOLERANCE * maxAbs;
     }
 
 }

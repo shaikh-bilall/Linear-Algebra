@@ -2,6 +2,7 @@ import linearAlgebra.domain.Diagonalization;
 import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
 import linearAlgebra.domain.exceptions.DefectiveMatrixException;
 import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
+import linearAlgebra.domain.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.domain.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
@@ -27,27 +28,27 @@ public class Main {
      * @param args unused
      */
     public static void main(
-            final String[] args
+        final String[] args
     ) {
         solveLinearSystem();
         showInverse("2. Determinant and inverse of an invertible matrix",
-                new Matrix(new double[][]{{2, -1, 0}, {-1, 2, -1}, {0, -1, 2}}));
+            new Matrix(new double[][]{{2, -1, 0}, {-1, 2, -1}, {0, -1, 2}}));
         showInverse("3. A singular matrix has no inverse",
-                new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}));
+            new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}));
         showProduct("4. Matrix product",
-                new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}),
-                new Matrix(new double[][]{{7, 8}, {9, 10}, {11, 12}}));
+            new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}),
+            new Matrix(new double[][]{{7, 8}, {9, 10}, {11, 12}}));
         showProduct("5. Matrix product with mismatched dimensions",
-                new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}),
-                new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}));
+            new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}),
+            new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}));
         showDiagonalization("6. Diagonalizing a matrix with distinct eigenvalues",
-                new Matrix(new double[][]{{4, 1, 0}, {2, 3, 1}, {0, 1, 5}}));
+            new Matrix(new double[][]{{4, 1, 0}, {2, 3, 1}, {0, 1, 5}}));
         showDiagonalization("7. Diagonalizing a matrix with a repeated eigenvalue",
-                new Matrix(new double[][]{{3, 1, 1}, {1, 3, 1}, {1, 1, 3}}));
+            new Matrix(new double[][]{{3, 1, 1}, {1, 3, 1}, {1, 1, 3}}));
         showDiagonalization("8. A rotation has complex eigenvalues, so it cannot be diagonalized over the reals",
-                new Matrix(new double[][]{{0, -1}, {1, 0}}));
+            new Matrix(new double[][]{{0, -1}, {1, 0}}));
         showDiagonalization("9. A Jordan block is defective, so it cannot be diagonalized",
-                new Matrix(new double[][]{{1, 1}, {0, 1}}));
+            new Matrix(new double[][]{{1, 1}, {0, 1}}));
     }
 
     // Solves A x = b by row reducing the augmented matrix [A | b]: the last column of the RREF is the solution.
@@ -62,14 +63,18 @@ public class Main {
     }
     // Prints the determinant and, when it exists, the inverse together with a check that A * A^-1 is the identity.
     private static void showInverse(
-            final String title,
-            final Matrix A
+        final String title,
+        final Matrix A
     ) {
         printHeading(title);
         print("A", A);
 
         MatrixLogic logic = new MatrixLogic(A);
-        System.out.println("Determinant: " + format(logic.determinant()));
+        try {
+            System.out.println("Determinant: " + format(logic.determinant()));
+        } catch (DeterminantDoesNotExistException e) {
+            System.out.println("A has no determinant because it is not square.");
+        }
         System.out.println();
         try {
             Matrix inverse = logic.inverse();
@@ -82,9 +87,9 @@ public class Main {
     }
     // Prints the product left * right, or a message when the dimensions do not allow it.
     private static void showProduct(
-            final String title,
-            final Matrix left,
-            final Matrix right
+        final String title,
+        final Matrix left,
+        final Matrix right
     ) {
         printHeading(title);
         print("A", left);
@@ -93,13 +98,13 @@ public class Main {
             print("A * B", new MatrixLogic(left).multiply(right));
         } catch (MatrixMultiplyDimMismatchException e) {
             System.out.printf("Cannot multiply a %dx%d matrix by a %dx%d matrix.%n%n",
-                    left.rows(), left.cols(), right.rows(), right.cols());
+                left.rows(), left.cols(), right.rows(), right.cols());
         }
     }
     // Prints A = P D P^-1 with a check that multiplying the factors back together gives A, or why A has no such form.
     private static void showDiagonalization(
-            final String title,
-            final Matrix A
+        final String title,
+        final Matrix A
     ) {
         printHeading(title);
         print("A", A);
@@ -123,8 +128,8 @@ public class Main {
     }
     // Multiplies two matrices whose dimensions are known to match.
     private static Matrix product(
-            final Matrix left,
-            final Matrix right
+        final Matrix left,
+        final Matrix right
     ) {
         try {
             return new MatrixLogic(left).multiply(right);
@@ -133,14 +138,14 @@ public class Main {
         }
     }
     private static void printHeading(
-            final String title
+        final String title
     ) {
         System.out.println("=== " + title + " ===");
         System.out.println();
     }
     private static void print(
-            final String label,
-            final Matrix matrix
+        final String label,
+        final Matrix matrix
     ) {
         System.out.println(label + ":");
         for (int i = 0; i < matrix.rows(); i++) {
@@ -153,12 +158,12 @@ public class Main {
         System.out.println();
     }
     private static String format(
-            final double value
+        final double value
     ) {
         return String.format(Locale.ROOT, "%.4f", shown(value));
     }
     private static double shown(
-            final double value
+        final double value
     ) {
         return (Math.abs(value) < PRINT_ZERO) ? 0 : value;
     }
