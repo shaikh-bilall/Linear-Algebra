@@ -1,7 +1,9 @@
 import linearAlgebra.domain.Diagonalization;
+import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
+import linearAlgebra.domain.exceptions.DefectiveMatrixException;
+import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
 import linearAlgebra.domain.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
-import linearAlgebra.domain.exceptions.NotDiagonalizableException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.logic.DiagonalizationLogic;
 import linearAlgebra.logic.MatrixLogic;
@@ -108,8 +110,14 @@ public class Main {
             print("P^-1", diagonalization.inverseP());
             print("P * D * P^-1 (equals A)",
                     product(product(diagonalization.P(), diagonalization.D()), diagonalization.inverseP()));
-        } catch (NotDiagonalizableException e) {
-            System.out.println("Not diagonalizable: " + e.getMessage());
+        } catch (ComplexEigenvaluesException e) {
+            System.out.println("Not diagonalizable: the matrix has complex eigenvalues.");
+            System.out.println();
+        } catch (DefectiveMatrixException e) {
+            System.out.println("Not diagonalizable: the matrix is defective.");
+            System.out.println();
+        } catch (DependentEigenvectorsException e) {
+            System.out.println("Not diagonalizable: the eigenvectors are linearly dependent.");
             System.out.println();
         }
     }

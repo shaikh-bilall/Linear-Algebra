@@ -3,8 +3,10 @@ package linearAlgebra.logic;
 import com.google.common.base.Preconditions;
 
 import linearAlgebra.domain.Diagonalization;
+import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
+import linearAlgebra.domain.exceptions.DefectiveMatrixException;
+import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
 import linearAlgebra.domain.exceptions.InverseNotAvailableException;
-import linearAlgebra.domain.exceptions.NotDiagonalizableException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
 
@@ -49,11 +51,15 @@ public final class DiagonalizationLogic {
      *
      * @return the factorization, with the eigenvalues ordered by decreasing magnitude and the columns of {@code P} the
      *         matching unit eigenvectors
-     * @throws NotDiagonalizableException if the matrix has complex eigenvalues or is defective
+     * @throws ComplexEigenvaluesException if the matrix has complex eigenvalues
+     * @throws DefectiveMatrixException if the matrix is defective
+     * @throws DependentEigenvectorsException if the eigenvectors of the matrix are linearly dependent
      * @throws IllegalStateException if the eigenvalues cannot be computed
      */
     public Diagonalization diagonalize()
-            throws NotDiagonalizableException
+            throws ComplexEigenvaluesException,
+            DefectiveMatrixException,
+            DependentEigenvectorsException
     {
         final int n = A.rows();
         final double scale = getScale(A);
@@ -126,7 +132,7 @@ public final class DiagonalizationLogic {
             final double[][] Q,
             final double tolerance
     )
-            throws NotDiagonalizableException
+            throws ComplexEigenvaluesException
     {
         final double norm = getFrobeniusNorm(H);
         int high = H.length - 1;
@@ -224,7 +230,7 @@ public final class DiagonalizationLogic {
             final int p,
             final double tolerance
     )
-            throws NotDiagonalizableException
+            throws ComplexEigenvaluesException
     {
         final int n = H.length;
         final double a = H[p][p];
@@ -236,7 +242,7 @@ public final class DiagonalizationLogic {
         final double half = (a - d) / 2;
         final double discriminant = half * half + b * c;
         if (discriminant < -tolerance * tolerance) {
-            throw new NotDiagonalizableException("The matrix has complex eigenvalues");
+            throw new ComplexEigenvaluesException();
         }
         final double root = Math.sqrt(Math.max(discriminant, 0));
 
@@ -319,7 +325,7 @@ public final class DiagonalizationLogic {
             final Cluster cluster,
             final double scale
     )
-            throws NotDiagonalizableException
+            throws DefectiveMatrixException
     {
         final int n = T.length;
 
@@ -363,7 +369,7 @@ public final class DiagonalizationLogic {
         }
 
         if (eigenvectors.size() < cluster.size()) {
-            throw new NotDiagonalizableException("The matrix is defective: an eigenvalue has fewer independent eigenvectors than its multiplicity");
+            throw new DefectiveMatrixException();
         }
         return eigenvectors;
     }
@@ -388,13 +394,13 @@ public final class DiagonalizationLogic {
     private static Matrix getInverse(
             final Matrix P
     )
-            throws NotDiagonalizableException
+            throws DependentEigenvectorsException
     {
         final Matrix inverse;
         try {
             inverse = new MatrixLogic(P).inverse();
         } catch (InverseNotAvailableException e) {
-            throw new NotDiagonalizableException("The matrix is defective: its eigenvectors are linearly dependent");
+            throw new DependentEigenvectorsException();
         }
         return inverse;
     }

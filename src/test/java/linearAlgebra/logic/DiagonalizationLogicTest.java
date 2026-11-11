@@ -1,7 +1,9 @@
 package linearAlgebra.logic;
 
 import linearAlgebra.domain.Diagonalization;
-import linearAlgebra.domain.exceptions.NotDiagonalizableException;
+import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
+import linearAlgebra.domain.exceptions.DefectiveMatrixException;
+import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
 import linearAlgebra.domain.Matrix;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -233,8 +235,7 @@ class DiagonalizationLogicTest {
             double[][] data
     ) {
         var logic = new DiagonalizationLogic(new Matrix(data));
-        NotDiagonalizableException thrown = assertThrows(NotDiagonalizableException.class, logic::diagonalize, name);
-        assertTrue(thrown.getMessage().contains("defective"), "Message should say defective but was: " + thrown.getMessage());
+        assertThrows(DefectiveMatrixException.class, logic::diagonalize, name);
     }
 
     // name, input
@@ -261,8 +262,7 @@ class DiagonalizationLogicTest {
             double[][] data
     ) {
         var logic = new DiagonalizationLogic(new Matrix(data));
-        NotDiagonalizableException thrown = assertThrows(NotDiagonalizableException.class, logic::diagonalize, name);
-        assertTrue(thrown.getMessage().contains("complex"), "Message should say complex but was: " + thrown.getMessage());
+        assertThrows(ComplexEigenvaluesException.class, logic::diagonalize, name);
     }
     @ParameterizedTest(name = "rejection survives scaling: {0}")
     @MethodSource("defectiveCases")
@@ -272,7 +272,7 @@ class DiagonalizationLogicTest {
     ) {
         for (double factor : FACTORS) {
             double[][] scaledData = scaled(data, factor);
-            assertThrows(NotDiagonalizableException.class,
+            assertThrows(DefectiveMatrixException.class,
                     () -> diagonalize(scaledData), name + " scaled by " + factor);
         }
     }
@@ -284,7 +284,7 @@ class DiagonalizationLogicTest {
     ) {
         for (double factor : FACTORS) {
             double[][] scaledData = scaled(data, factor);
-            assertThrows(NotDiagonalizableException.class,
+            assertThrows(ComplexEigenvaluesException.class,
                     () -> diagonalize(scaledData), name + " scaled by " + factor);
         }
     }
@@ -379,7 +379,7 @@ class DiagonalizationLogicTest {
     void inputIsNeverMutatedWhenTheMatrixIsRejected() {
         double[][] data = {{0, -1}, {1, 0}};
         var original = new Matrix(data);
-        assertThrows(NotDiagonalizableException.class, () -> new DiagonalizationLogic(original).diagonalize());
+        assertThrows(ComplexEigenvaluesException.class, () -> new DiagonalizationLogic(original).diagonalize());
         assertMatrixEquals(data, original.data(), 0.0, "input");
     }
     @Test
@@ -492,8 +492,10 @@ class DiagonalizationLogicTest {
             double[][][] basis = randomBasisChange(random, n, 2 * n);
             double[][] data = similar(basis[0], basis[1], jordan);
 
-            assertThrows(NotDiagonalizableException.class, () -> diagonalize(data),
+            Exception thrown = assertThrows(Exception.class, () -> diagonalize(data),
                     "Jordan block of size " + blockSize + " in " + Arrays.deepToString(data));
+            assertTrue(thrown instanceof DefectiveMatrixException || thrown instanceof ComplexEigenvaluesException,
+                    "Expected a non-diagonalizable rejection but was: " + thrown);
         }
     }
     @Test
@@ -515,7 +517,7 @@ class DiagonalizationLogicTest {
             double[][][] basis = randomBasisChange(random, n, 2 * n);
             double[][] data = similar(basis[0], basis[1], blocks);
 
-            assertThrows(NotDiagonalizableException.class, () -> diagonalize(data),
+            assertThrows(ComplexEigenvaluesException.class, () -> diagonalize(data),
                     pairs + " complex pair(s) in " + Arrays.deepToString(data));
         }
     }
@@ -853,7 +855,9 @@ class DiagonalizationLogicTest {
     private static Diagonalization diagonalize(
             final double[][] data
     )
-            throws NotDiagonalizableException
+            throws ComplexEigenvaluesException,
+            DefectiveMatrixException,
+            DependentEigenvectorsException
     {
         return new DiagonalizationLogic(new Matrix(data)).diagonalize();
     }
