@@ -39,6 +39,11 @@ public final class DiagonalizationLogic {
     // Entries within this relative distance of each other count as equally large when fixing an eigenvector's sign.
     private static final double SIGN_TIE_TOLERANCE = 1e-9;
 
+    /**
+     * Creates a diagonalizer for a fixed square matrix.
+     *
+     * @param A the square matrix to diagonalize
+     */
     public DiagonalizationLogic(
         final Matrix A
     ) {
@@ -64,7 +69,6 @@ public final class DiagonalizationLogic {
      * @throws ComplexEigenvaluesException if the matrix has complex eigenvalues
      * @throws DefectiveMatrixException if the matrix is defective
      * @throws DependentEigenvectorsException if the eigenvectors of the matrix are linearly dependent
-     * @throws IllegalStateException if the eigenvalues cannot be computed
      */
     public Diagonalization diagonalize()
         throws ComplexEigenvaluesException,
@@ -76,7 +80,7 @@ public final class DiagonalizationLogic {
         final double scale = getScale(A);
         final double tolerance = CLUSTER_TOLERANCE * scale;
 
-        // A = Q T Q^T with Q orthogonal and T upper triangular; both start as copies and are reduced in place.
+        // A = Q T Q^T with Q orthogonal and T upper triangular; T and Q are private working arrays.
         final double[][] T = A.data();
         final double[][] Q = Matrix.identity(n).data();
         reduceToHessenberg(T, Q);
@@ -105,9 +109,7 @@ public final class DiagonalizationLogic {
         return new Diagonalization(P, new Matrix(diagonalData), inverseP);
     }
 
-    // ---------- step 1: Hessenberg form ----------
-
-    // Householder reflections H_k clear everything below the subdiagonal: H := H_k H H_k and Q := Q H_k.
+    // Reduces H to Hessenberg form with Householder reflections, accumulating them in Q.
     private static void reduceToHessenberg(
         final double[][] H,
         final double[][] Q
@@ -136,11 +138,7 @@ public final class DiagonalizationLogic {
         }
     }
 
-    // ---------- step 2: real Schur form ----------
-
-    // Chases the subdiagonal of the Hessenberg matrix H to zero, from the bottom up. The active window [low, high] is
-    // the unreduced block still being iterated; everything below it has already split off. Every transformation is
-    // applied to the whole of H (not just the window) and to Q, so that A = Q H Q^T holds throughout.
+    // Reduces the Hessenberg matrix H to real Schur form by chasing subdiagonal entries to zero.
     private static void reduceToSchur(
         final double[][] H,
         final double[][] Q,
@@ -182,9 +180,7 @@ public final class DiagonalizationLogic {
             }
         }
     }
-    // One implicit double-shift QR sweep on the window [low, high] (at least 3x3). The shifts are the two eigenvalues
-    // of the trailing 2x2 block, kept as their sum and product so the arithmetic stays real. A bulge of three
-    // non-zeros is created at the top-left by the first reflector and chased down and off the bottom-right.
+    // Performs one implicit double-shift QR sweep on the active window.
     private static void francisStep(
         final double[][] H,
         final double[][] Q,
@@ -212,14 +208,13 @@ public final class DiagonalizationLogic {
             final int size = Math.min(3, high - k + 1);
             final double[] v = new double[size];
             if (k == low) {
-                // First column of (H - s1 I)(H - s2 I), which only has three non-zeros. It is written in differences
-                // from the mean: the expanded form h^2 - (s1 + s2) h + s1 s2 cancels badly when H is nearly scalar.
+                // First column of (H - s1 I)(H - s2 I); differences from the mean avoid cancellation.
                 final double topShifted = H[low][low] - mean;
                 v[0] = topShifted * topShifted - discriminant + H[low][low + 1] * H[low + 1][low];
                 v[1] = H[low + 1][low] * (topShifted + (H[low + 1][low + 1] - mean));
                 v[2] = H[low + 1][low] * H[low + 2][low + 1];
             } else {
-                // the bulge sits in column k - 1, just below the subdiagonal
+                // The bulge sits in column k - 1, just below the subdiagonal.
                 for (int i = 0; i < size; i++) {
                     v[i] = H[k + i][k - 1];
                 }
@@ -238,9 +233,7 @@ public final class DiagonalizationLogic {
             }
         }
     }
-    // Splits the 2x2 block at rows and columns p, p + 1 into two 1x1 blocks with a rotation, or throws if its
-    // eigenvalues are complex (an imaginary part within the tolerance counts as a double real eigenvalue). The
-    // rotation's first column is an eigenvector of the block, which makes the block upper triangular.
+    // Splits the 2x2 block at rows p and p + 1, reporting a complex eigenvalue pair.
     private static void standardizeBlock(
         final double[][] H,
         final double[][] Q,
@@ -263,8 +256,7 @@ public final class DiagonalizationLogic {
         }
         final double root = Math.sqrt(Math.max(discriminant, 0));
 
-        // The eigenvalue is d + z, with z picked to avoid cancellation. Both (z, c) and (b, z - 2 half) are
-        // eigenvectors for it; the longer of the two is the more accurate.
+        // The eigenvalue is d + z, with z chosen to avoid cancellation and the longer eigenvector used.
         final double z = (half >= 0) ? half + root : half - root;
         double x = z;
         double y = c;
@@ -291,14 +283,10 @@ public final class DiagonalizationLogic {
         H[p + 1][p] = 0;
     }
 
-    // ---------- steps 3 and 4: eigenvalues and eigenvectors from the Schur form ----------
-
-    // One distinct eigenvalue (the mean of the diagonal entries that agreed) and how many diagonal entries it covers.
+    // One distinct eigenvalue and how many diagonal entries it covers.
     private record Cluster(double value, int size) {}
 
-    // Groups the diagonal of T into repeated eigenvalues: after sorting, a gap of more than the tolerance starts a new
-    // group. The groups are ordered by decreasing magnitude (the larger value first on a tie), so a Markov matrix's
-    // eigenvalue 1 comes first even when -1 is also an eigenvalue.
+    // Groups the diagonal of T into repeated eigenvalues, ordered by decreasing magnitude.
     private static List<Cluster> getClusters(
         final double[][] T,
         final double tolerance
@@ -326,16 +314,13 @@ public final class DiagonalizationLogic {
         }
         clusters.add(new Cluster(sum / size, size));
 
-        // Magnitudes are compared in steps of the tolerance, so that +1 and -1 tie even when rounding makes one of
-        // them look slightly larger, and the larger value then goes first.
+        // Round magnitudes to tolerance steps so +1 and -1 tie, then put the larger value first.
         clusters.sort(Comparator.comparingLong((Cluster cluster) -> Math.round(Math.abs(cluster.value()) / tolerance))
             .thenComparingDouble(Cluster::value)
             .reversed());
         return clusters;
     }
-    // The eigenvectors of the cluster's eigenvalue lambda: a basis of the null space of T - lambda*I, taken from its
-    // RREF, then carried back through Q (T y = lambda y gives A (Q y) = lambda (Q y)). Throws if the null space is
-    // smaller than the number of times lambda repeats, because then A is defective.
+    // Returns a basis of eigenvectors for one eigenvalue, or reports a defective matrix.
     private static List<Vector> getEigenvectors(
         final double[][] T,
         final Matrix Q,
@@ -346,8 +331,7 @@ public final class DiagonalizationLogic {
     {
         final int n = T.length;
 
-        // Divided by the scale of A, with rounding-level entries zeroed. MatrixLogic judges "zero" relative to the
-        // largest entry of the matrix it is given, which for a repeated eigenvalue can be nothing but rounding noise.
+        // Scale A down and zero rounding-level entries, which dominate for repeated eigenvalues.
         final double[][] shifted = new double[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -404,11 +388,7 @@ public final class DiagonalizationLogic {
         return (unit.get(largest) < 0) ? unit.scale(-1) : unit;
     }
 
-    // ---------- step 5: P must be invertible ----------
-
-    // Every cluster already supplied as many independent eigenvectors as its multiplicity, so this can only fail if
-    // the eigenvectors of different eigenvalues come out dependent. The inverse failure is translated because its
-    // meaning changes here: for a matrix P it says "singular", for the caller it says the eigenvectors are dependent.
+    // Inverts P, translating a singular P into a dependent-eigenvectors failure.
     private static Matrix getInverse(
         final Matrix P
     )
@@ -422,8 +402,6 @@ public final class DiagonalizationLogic {
         }
         return inverse;
     }
-
-    // ---------- helpers ----------
 
     // Multiplies a matrix by a vector whose length is known to match its column count.
     private static Vector multiplyKnownDimensions(
@@ -439,8 +417,7 @@ public final class DiagonalizationLogic {
             );
         }
     }
-    // Turns x, in place, into the unit vector v for which (I - 2vv^T)x is a multiple of the first basis vector. Adding
-    // the sign of x[0] times |x| to x[0] avoids cancellation. Returns false, leaving x alone, if x is zero.
+    // Turns x into a Householder reflector, returning false when x is zero.
     private static boolean toReflector(
         final double[] x
     ) {

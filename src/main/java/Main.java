@@ -137,12 +137,14 @@ public class Main {
             throw new IllegalStateException("Main.product: the dimensions were expected to match", e);
         }
     }
+    // Prints a section heading followed by a blank line.
     private static void printHeading(
         final String title
     ) {
         System.out.println("=== " + title + " ===");
         System.out.println();
     }
+    // Prints a labelled matrix with one row per line.
     private static void print(
         final String label,
         final Matrix matrix
@@ -157,11 +159,13 @@ public class Main {
         }
         System.out.println();
     }
+    // Formats a value for display with four decimal places.
     private static String format(
         final double value
     ) {
         return String.format(Locale.ROOT, "%.4f", shown(value));
     }
+    // Snaps values that would display as zero to an exact zero.
     private static double shown(
         final double value
     ) {

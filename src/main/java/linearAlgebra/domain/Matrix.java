@@ -14,6 +14,11 @@ import java.util.List;
  */
 public record Matrix(double[][] data) {
 
+    /**
+     * Creates a matrix from the given entries.
+     *
+     * @param data the entries, indexed as {@code data[row][column]}
+     */
     public Matrix(
         final double[][] data
     ) {
@@ -92,7 +97,7 @@ public record Matrix(double[][] data) {
     /**
      * Returns the largest absolute value among the entries.
      *
-     * @return the largest absolute entry, never negative
+     * @return the largest absolute value of any entry, never negative
      */
     public double maxAbs() {
         checkMatrix();
@@ -108,7 +113,6 @@ public record Matrix(double[][] data) {
      * Returns the transpose, with rows and columns swapped.
      *
      * @return a new matrix; this one is unchanged
-     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public Matrix transpose() {
         checkMatrix();
@@ -128,8 +132,6 @@ public record Matrix(double[][] data) {
      * @param vector the vector to multiply, whose length must equal the number of columns
      * @return the product of this matrix and {@code vector}
      * @throws MatrixMultiplyDimMismatchException if the length of {@code vector} differs from the number of columns
-     * @throws NullPointerException if {@code vector} is {@code null}
-     * @throws IllegalStateException if the product overflows, or this matrix was corrupted through {@code data()}
      */
     public Vector multiply(
         final Vector vector
@@ -165,9 +167,6 @@ public record Matrix(double[][] data) {
      *
      * @param other the matrix whose columns are appended, with the same number of rows as this one
      * @return a new matrix with the columns of both; neither operand is changed
-     * @throws NullPointerException if {@code other} is {@code null}
-     * @throws IllegalArgumentException if the row counts differ
-     * @throws IllegalStateException if either matrix was corrupted through {@code data()}
      */
     public Matrix merge(
         final Matrix other
@@ -198,9 +197,6 @@ public record Matrix(double[][] data) {
      *
      * @param shuffledIndices a permutation of the row indices, each of {@code 0} to {@code rows() - 1} exactly once
      * @return a new matrix with the rows reordered
-     * @throws NullPointerException if {@code shuffledIndices} or any of its elements is {@code null}
-     * @throws IllegalArgumentException if the list is not a permutation of the row indices, or this matrix was
-     *                                  corrupted through {@code data()}
      */
     public Matrix permuteRows(
         final List<Integer> shuffledIndices
@@ -223,8 +219,6 @@ public record Matrix(double[][] data) {
      *
      * @param rowIndex the zero-based index of the row
      * @return a copy of the row; changing it does not affect this matrix
-     * @throws IllegalArgumentException if {@code rowIndex} is out of range
-     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public Vector getRow(
         final int rowIndex
@@ -244,8 +238,6 @@ public record Matrix(double[][] data) {
      * @param rowIndex the zero-based row index
      * @param colIndex the zero-based column index
      * @return the entry at that position
-     * @throws IllegalArgumentException if either index is out of range
-     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public double get(
         final int rowIndex,
@@ -278,7 +270,6 @@ public record Matrix(double[][] data) {
      * Returns the number of rows.
      *
      * @return the row count, always at least 1
-     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public int rows() {
         checkMatrix();
@@ -288,7 +279,6 @@ public record Matrix(double[][] data) {
      * Returns the number of columns.
      *
      * @return the column count, always at least 1
-     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public int cols() {
         checkMatrix();
@@ -298,7 +288,6 @@ public record Matrix(double[][] data) {
      * Returns an independent copy of this matrix.
      *
      * @return a new matrix with the same entries
-     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public Matrix copy() {
         checkMatrix();
@@ -312,7 +301,6 @@ public record Matrix(double[][] data) {
      *
      * @param otherObject the object to compare with
      * @return {@code true} if {@code otherObject} is a matrix with the same dimensions and entries
-     * @throws IllegalStateException if this matrix, or the other one, was corrupted through {@code data()}
      */
     @Override
     public boolean equals(
@@ -340,7 +328,6 @@ public record Matrix(double[][] data) {
      * Returns a hash code that agrees with {@link #equals}: matrices that are equal have the same hash code.
      *
      * @return the hash code of the entries
-     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     @Override
     public int hashCode() {

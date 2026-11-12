@@ -9,6 +9,7 @@ import java.util.List;
  */
 final class Permutations {
 
+    // Prevents instantiation.
     private Permutations() {
     }
 

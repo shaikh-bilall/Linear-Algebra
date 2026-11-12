@@ -11,13 +11,18 @@ import linearAlgebra.domain.rref.Type1;
 import linearAlgebra.domain.rref.Type2;
 
 /**
- * Row-reduction based operations on a fixed matrix: RREF, determinant, inverse and product. The matrix is never
- * modified.
+ * Linear-algebra operations on a fixed matrix: product, reduced row echelon form, determinant and
+ * inverse. The matrix is never modified.
  */
 public final class MatrixLogic {
 
     private final Matrix A;
 
+    /**
+     * Creates operations for a fixed matrix.
+     *
+     * @param A the matrix to operate on
+     */
     public MatrixLogic(
         final Matrix A
     ) {
@@ -35,7 +40,6 @@ public final class MatrixLogic {
      * @param other the right-hand factor, with as many rows as the matrix has columns
      * @return the product, as a new matrix
      * @throws MatrixMultiplyDimMismatchException if the dimensions do not allow the product
-     * @throws NullPointerException if {@code other} is {@code null}
      */
     public Matrix multiply(
         final Matrix other
@@ -119,12 +123,10 @@ public final class MatrixLogic {
         return getDeterminant(RowReducer.reduce(A));
     }
 
-    // Returns the determinant of a reduced square matrix, computed from the recorded operations.
+    // Returns the determinant from the operations recorded while reducing a square matrix.
     private static double getDeterminant(
         final RowReducer.Reduction reduction
     ) {
-        // A square matrix is singular iff its RREF is not the identity (some column got no pivot).
-        // In that case the first pivotless column leaves a 0 on the diagonal.
         final Matrix reduced = reduction.reduced();
         for (int i = 0; i < reduced.rows(); i++) {
             if (Math.abs(reduced.get(i, i)) < 0.5) {
@@ -132,8 +134,7 @@ public final class MatrixLogic {
             }
         }
 
-        // RREF(A) = I and det(I) = 1. Type1 flips the sign, Type2 scales the determinant
-        // by its scalar, Type3 leaves it unchanged. So det(A) = (-1)^swaps / product(scalars).
+        // Type1 flips the sign, Type2 divides by its scalar, and Type3 leaves the determinant unchanged.
         double determinant = 1;
         for (var operation : reduction.operations()) {
             if (operation instanceof Type1) {

@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Row reduction and the elementary row operations it is built from. It finds the reduced row echelon form of a
- * matrix together with the operations that lead to it, and applies operations, singly or as a recorded sequence, to
- * matrices and vectors. Operands are never modified.
+ * Row reduction and elementary row operations. It finds the reduced row echelon form of a matrix
+ * together with the operations that lead to it, and applies operations, singly or as a recorded
+ * sequence, to matrices and vectors. Operands are never modified.
  */
 public final class RowReducer {
 
@@ -26,6 +26,13 @@ public final class RowReducer {
      */
     public record Reduction(Matrix reduced, List<OperationRREF> operations) {
 
+        /**
+         * Creates a reduction from its reduced matrix and the operations that produced it.
+         *
+         * @param reduced    the reduced row echelon form
+         * @param operations the elementary operations that turn the original matrix into
+         *                   {@code reduced}, in order
+         */
         public Reduction {
             Preconditions.checkNotNull(
                 reduced,
@@ -35,11 +42,12 @@ public final class RowReducer {
         }
     }
 
+    // Prevents instantiation.
     private RowReducer() {
     }
 
     /**
-     * Row reduces a matrix to reduced row echelon form (Gauss-Jordan with partial pivoting).
+     * Reduces a matrix to reduced row echelon form.
      *
      * @param A the matrix to reduce
      * @return the reduced matrix and the operations that produced it; the reduced matrix is {@code A} itself when no
@@ -196,8 +204,7 @@ public final class RowReducer {
         return fromColumn(column);
     }
 
-    // The only place the elementary row operations are carried out: row swap, row *= scalar and
-    // target += scalar * source, on a private working array. Everything public goes through here.
+    // Holds the only copy of the elementary row-operation arithmetic on a private working array.
     private static void applyInPlace(
         final double[][] data,
         final OperationRREF operation
@@ -254,8 +261,7 @@ public final class RowReducer {
             row
         );
     }
-    // Applies the operation to the working array and logs it, so the reduction and any later replay of the log
-    // run through the same code.
+    // Applies an operation to the working array and records it for replay.
     private static void applyAndRecord(
         final double[][] working,
         final List<OperationRREF> operations,
@@ -264,8 +270,7 @@ public final class RowReducer {
         applyInPlace(working, operation);
         operations.add(operation);
     }
-    // Partial pivoting: largest magnitude in the column at or below startRow.
-    // Ties go to the upper row (fewer swaps). Returns -1 if nothing exceeds the tolerance.
+    // Returns the largest-magnitude row at or below startRow in a column, or -1 if none is significant.
     private static int findPivotRow(
         final double[][] data,
         final int startRow,
@@ -283,7 +288,7 @@ public final class RowReducer {
         }
         return bestRow;
     }
-    // Clears every other entry in the pivot column, above and below (Gauss-Jordan).
+    // Clears every other entry in the pivot column.
     private static void eliminateColumn(
         final double[][] working,
         final List<OperationRREF> operations,

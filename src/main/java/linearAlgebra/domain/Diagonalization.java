@@ -14,6 +14,13 @@ import java.util.Objects;
  */
 public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
 
+    /**
+     * Creates a diagonalization from its eigenvector matrix, eigenvalue matrix and inverse.
+     *
+     * @param P        the eigenvectors, one per column
+     * @param D        the eigenvalues matching the columns of {@code P}, on the diagonal
+     * @param inverseP the inverse of {@code P}
+     */
     public Diagonalization(
         final Matrix P,
         final Matrix D,
@@ -102,7 +109,6 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
      *
      * @param otherObject the object to compare with
      * @return {@code true} if {@code otherObject} is a diagonalization with equal matrices
-     * @throws IllegalStateException if one of the matrices that gets compared was corrupted through {@code data()}
      */
     @Override
     public boolean equals(
@@ -125,7 +131,6 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
      * Returns a hash code that agrees with {@link #equals}.
      *
      * @return the hash code of the three matrices
-     * @throws IllegalStateException if one of the matrices was corrupted through {@code data()}
      */
     @Override
     public int hashCode() {

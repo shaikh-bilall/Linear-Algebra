@@ -16,6 +16,11 @@ import java.util.NoSuchElementException;
  */
 public record Vector(double[] data) implements Iterable<Double> {
 
+    /**
+     * Creates a vector from the given entries.
+     *
+     * @param data the entries in order
+     */
     public Vector(
         final double[] data
     ) {
@@ -60,9 +65,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      *
      * @param other the vector to add
      * @return a new vector holding the sum
-     * @throws NullPointerException if {@code other} is {@code null}
-     * @throws IllegalArgumentException if the lengths differ
-     * @throws IllegalStateException if the sum overflows, or either vector is invalid
      */
     public Vector add(
         final Vector other
@@ -88,8 +90,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      *
      * @param scalar the finite factor to multiply every entry by
      * @return a new vector holding the product
-     * @throws IllegalArgumentException if {@code scalar} is not finite
-     * @throws IllegalStateException if the product overflows, or this vector is invalid
      */
     public Vector scale(
         final double scalar
@@ -116,9 +116,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      *
      * @param other the vector to take the dot product with
      * @return the dot product
-     * @throws NullPointerException if {@code other} is {@code null}
-     * @throws IllegalArgumentException if the lengths differ
-     * @throws IllegalStateException if the result overflows, or either vector is invalid
      */
     public double dot(
         final Vector other
@@ -142,7 +139,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      * Returns the Euclidean length of this vector.
      *
      * @return the length, never negative
-     * @throws IllegalStateException if the result overflows, or this vector is invalid
      */
     public double norm() {
         checkVector();
@@ -161,9 +157,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      *
      * @param shuffledIndices each index from {@code 0} to {@code length() - 1}, exactly once
      * @return a new vector with the entries reordered
-     * @throws NullPointerException if {@code shuffledIndices} or any of its elements is {@code null}
-     * @throws IllegalArgumentException if the list is not a permutation of the indices
-     * @throws IllegalStateException if this vector is invalid
      */
     public Vector permute(
         final List<Integer> shuffledIndices
@@ -186,8 +179,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      *
      * @param index the zero-based position
      * @return the entry at that position
-     * @throws IllegalArgumentException if {@code index} is out of range
-     * @throws IllegalStateException if this vector is invalid
      */
     public double get(
         final int index
@@ -212,7 +203,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      * Returns the number of entries.
      *
      * @return the length
-     * @throws IllegalStateException if this vector is invalid
      */
     public int length() {
         checkVector();
@@ -222,7 +212,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      * Iterates over the entries in order.
      *
      * @return an iterator over the entries
-     * @throws IllegalStateException if this vector is invalid
      */
     @Override
     @NonNull
@@ -245,11 +234,9 @@ public record Vector(double[] data) implements Iterable<Double> {
              * Returns the next entry.
              *
              * @return the next entry
-             * @throws NoSuchElementException if no entry remains
              */
             @Override
             public Double next()
-                throws NoSuchElementException
             {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
@@ -262,7 +249,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      * Returns a new vector that is a copy of this one.
      *
      * @return a new vector with the same entries
-     * @throws IllegalStateException if this vector is invalid
      */
     public Vector copy() {
         checkVector();
@@ -275,7 +261,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      *
      * @param otherObject the object to compare with
      * @return {@code true} if {@code otherObject} is a vector with the same length and entries
-     * @throws IllegalStateException if this vector, or the other one, is invalid
      */
     @Override
     public boolean equals(
@@ -295,7 +280,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      * Returns a hash code that agrees with {@link #equals}: vectors that are equal have the same hash code.
      *
      * @return the hash code of the entries
-     * @throws IllegalStateException if this vector is invalid
      */
     @Override
     public int hashCode() {
@@ -308,7 +292,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      * @param first  the first array
      * @param second the second array
      * @return {@code true} if the arrays have the same length and every pair of matching entries is equal
-     * @throws NullPointerException if either array is {@code null}
      */
     public static boolean entriesEqual(
         final double[] first,
@@ -338,7 +321,6 @@ public record Vector(double[] data) implements Iterable<Double> {
      *
      * @param entries the array to hash
      * @return the hash code
-     * @throws NullPointerException if {@code entries} is {@code null}
      */
     public static int entriesHashCode(
         final double[] entries

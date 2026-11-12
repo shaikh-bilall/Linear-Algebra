@@ -5,8 +5,7 @@ import linearAlgebra.domain.Vector;
 
 /**
  * An elementary row operation. It acts on the rows of a matrix and, in the same way, on the entries of a vector, so a
- * sequence of operations can transform a matrix and a vector consistently. An operation checks that it fits its
- * operand when applied.
+ * sequence of operations can transform a matrix and a vector consistently.
  */
 public interface OperationRREF {
     /**
