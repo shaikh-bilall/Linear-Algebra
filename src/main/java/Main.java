@@ -114,7 +114,7 @@ public class Main {
             print("D (eigenvalues on the diagonal)", diagonalization.D());
             print("P^-1", diagonalization.inverseP());
             print("P * D * P^-1 (equals A)",
-                    product(product(diagonalization.P(), diagonalization.D()), diagonalization.inverseP()));
+                product(product(diagonalization.P(), diagonalization.D()), diagonalization.inverseP()));
         } catch (ComplexEigenvaluesException e) {
             System.out.println("Not diagonalizable: the matrix has complex eigenvalues.");
             System.out.println();
@@ -134,7 +134,7 @@ public class Main {
         try {
             return new MatrixLogic(left).multiply(right);
         } catch (MatrixMultiplyDimMismatchException e) {
-            throw new IllegalStateException("The dimensions were expected to match", e);
+            throw new IllegalStateException("Main.product: the dimensions were expected to match", e);
         }
     }
     private static void printHeading(

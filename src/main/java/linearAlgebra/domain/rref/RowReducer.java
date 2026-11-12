@@ -247,7 +247,8 @@ public final class RowReducer {
         final int row
     ) {
         Preconditions.checkArgument(
-            row < rows,
+            row >= 0 &&
+                row < rows,
             "RowReducer: index out of bounds for an operand with %s rows: %s",
             rows,
             row

@@ -19,30 +19,32 @@ public record Matrix(double[][] data) {
     ) {
         Preconditions.checkNotNull(
             data,
-            "Matrix data must not be null"
+            "Matrix: data must not be null"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             data.length > 0,
-            "Matrix must have at least one row"
+            "Matrix: matrix must have at least one row"
         );
         for (double[] row : data) {
             Preconditions.checkNotNull(
                 row,
-                "Matrix row must not be null"
+                "Matrix: row must not be null"
             );
         }
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             data[0].length > 0,
-            "Matrix must have at least one column"
+            "Matrix: matrix must have at least one column"
         );
         for (double[] row : data) {
-            Preconditions.checkState(
+            Preconditions.checkArgument(
                 row.length == data[0].length,
-                "All rows must have the same number of columns"
+                "Matrix: all rows must have the same number of columns: %s != %s",
+                row.length,
+                data[0].length
             );
-            Preconditions.checkState(
+            Preconditions.checkArgument(
                 Arrays.stream(row).allMatch(Double::isFinite),
-                "All entries must be finite numbers"
+                "Matrix: all entries must be finite numbers"
             );
         }
 
@@ -137,7 +139,7 @@ public record Matrix(double[][] data) {
         checkMatrix();
         Preconditions.checkNotNull(
             vector,
-            "Vector must not be null"
+            "Matrix.multiply: vector must not be null"
         );
         if (data[0].length != vector.length()) {
             throw new MatrixMultiplyDimMismatchException();
@@ -149,6 +151,11 @@ public record Matrix(double[][] data) {
             for (int j = 0; j < data[0].length; j++) {
                 sum += data[i][j] * vector.get(j);
             }
+            Preconditions.checkState(
+                Double.isFinite(sum),
+                "Matrix.multiply: product entry must be finite: row %s",
+                i
+            );
             resultData[i] = sum;
         }
         return new Vector(resultData);
@@ -159,7 +166,8 @@ public record Matrix(double[][] data) {
      * @param other the matrix whose columns are appended, with the same number of rows as this one
      * @return a new matrix with the columns of both; neither operand is changed
      * @throws NullPointerException if {@code other} is {@code null}
-     * @throws IllegalStateException if the row counts differ, or either matrix was corrupted through {@code data()}
+     * @throws IllegalArgumentException if the row counts differ
+     * @throws IllegalStateException if either matrix was corrupted through {@code data()}
      */
     public Matrix merge(
         final Matrix other
@@ -167,11 +175,13 @@ public record Matrix(double[][] data) {
         checkMatrix();
         Preconditions.checkNotNull(
             other,
-            "Other matrix must not be null"
+            "Matrix.merge: other matrix must not be null"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             data.length == other.rows(),
-            "Matrices must have the same number of rows to be merged"
+            "Matrix.merge: matrices must have the same number of rows: %s != %s",
+            data.length,
+            other.rows()
         );
 
         final int cols = data[0].length;
@@ -213,17 +223,18 @@ public record Matrix(double[][] data) {
      *
      * @param rowIndex the zero-based index of the row
      * @return a copy of the row; changing it does not affect this matrix
-     * @throws IllegalStateException if {@code rowIndex} is out of range, or this matrix was corrupted through
-     *                               {@code data()}
+     * @throws IllegalArgumentException if {@code rowIndex} is out of range
+     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public Vector getRow(
         final int rowIndex
     ) {
         checkMatrix();
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             rowIndex >= 0 &&
                 rowIndex < data.length,
-            "Row index out of bounds"
+            "Matrix.getRow: row index out of bounds: %s",
+            rowIndex
         );
         return new Vector(data[rowIndex]);
     }
@@ -233,29 +244,33 @@ public record Matrix(double[][] data) {
      * @param rowIndex the zero-based row index
      * @param colIndex the zero-based column index
      * @return the entry at that position
-     * @throws IllegalStateException if either index is out of range, or this matrix was corrupted through
-     *                               {@code data()}
+     * @throws IllegalArgumentException if either index is out of range
+     * @throws IllegalStateException if this matrix was corrupted through {@code data()}
      */
     public double get(
         final int rowIndex,
         final int colIndex
     ) {
         checkMatrix();
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             rowIndex >= 0 &&
                 rowIndex < data.length,
-            "Row index out of bounds"
+            "Matrix.get: row index out of bounds: %s",
+            rowIndex
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             colIndex >= 0 &&
                 colIndex < data[0].length,
-            "Column index out of bounds"
+            "Matrix.get: column index out of bounds: %s",
+            colIndex
         );
 
         double value = data[rowIndex][colIndex];
         Preconditions.checkState(
             Double.isFinite(value),
-            "Entry must be finite"
+            "Matrix.get: entry must be finite: row %s, column %s",
+            rowIndex,
+            colIndex
         );
         return value;
     }
@@ -341,25 +356,25 @@ public record Matrix(double[][] data) {
     private void checkMatrix() {
         Preconditions.checkState(
             data != null,
-            "Matrix data must not be null"
+            "Matrix: data must not be null"
         );
         Preconditions.checkState(
             data.length > 0,
-            "Matrix must have at least one row"
+            "Matrix: matrix must have at least one row"
         );
         Preconditions.checkState(
             data[0] != null &&
                 data[0].length > 0,
-            "Matrix must have at least one column"
+            "Matrix: matrix must have at least one column"
         );
         for (double[] row : data) {
             Preconditions.checkState(
                 row != null,
-                "Matrix row must not be null"
+                "Matrix: row must not be null"
             );
             Preconditions.checkState(
                 row.length == data[0].length,
-                "All rows must have the same number of columns"
+                "Matrix: all rows must have the same number of columns"
             );
         }
     }

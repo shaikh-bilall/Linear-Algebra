@@ -21,30 +21,44 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
     ) {
         Preconditions.checkNotNull(
             P,
-            "P must not be null"
+            "Diagonalization: P must not be null"
         );
         Preconditions.checkNotNull(
             D,
-            "D must not be null"
+            "Diagonalization: D must not be null"
         );
         Preconditions.checkNotNull(
             inverseP,
-            "Inverse of P must not be null"
+            "Diagonalization: inverse of P must not be null"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             P.rows() == P.cols(),
-            "P must be square"
+            "Diagonalization: P must be square: %s x %s",
+            P.rows(),
+            P.cols()
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             D.rows() == P.rows() &&
                 D.cols() == P.cols(),
-            "D must have the same dimensions as P"
+            "Diagonalization: D must have the same dimensions as P"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             inverseP.rows() == P.rows() &&
                 inverseP.cols() == P.cols(),
-            "Inverse of P must have the same dimensions as P"
+            "Diagonalization: inverse of P must have the same dimensions as P"
         );
+        for (int i = 0; i < D.rows(); i++) {
+            for (int j = 0; j < D.cols(); j++) {
+                if (i != j) {
+                    Preconditions.checkArgument(
+                        D.get(i, j) == 0,
+                        "Diagonalization: D must be diagonal: nonzero entry at row %s, column %s",
+                        i,
+                        j
+                    );
+                }
+            }
+        }
 
         this.P = P;
         this.D = D;
@@ -125,28 +139,28 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
             P != null &&
                 D != null &&
                 inverseP != null,
-            "P, D and the inverse of P must not be null"
+            "Diagonalization: P, D and the inverse of P must not be null"
         );
         Preconditions.checkState(
             P.rows() == P.cols(),
-            "P must be square"
+            "Diagonalization: P must be square"
         );
         Preconditions.checkState(
             D.rows() == P.rows() &&
                 D.cols() == P.cols(),
-            "D must have the same dimensions as P"
+            "Diagonalization: D must have the same dimensions as P"
         );
         Preconditions.checkState(
             inverseP.rows() == P.rows() &&
                 inverseP.cols() == P.cols(),
-            "Inverse of P must have the same dimensions as P"
+            "Diagonalization: inverse of P must have the same dimensions as P"
         );
         for (int i = 0; i < D.rows(); i++) {
             for (int j = 0; j < D.cols(); j++) {
                 if (i != j) {
                     Preconditions.checkState(
                         D.get(i, j) == 0,
-                        "D must be diagonal"
+                        "Diagonalization: D must be diagonal"
                     );
                 }
             }

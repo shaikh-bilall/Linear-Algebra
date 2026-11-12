@@ -42,9 +42,18 @@ public final class DiagonalizationLogic {
     public DiagonalizationLogic(
         final Matrix A
     ) {
-        Preconditions.checkNotNull(A, "Matrix must not be null");
-        Preconditions.checkArgument(A.rows() == A.cols(), "Only square matrices can be diagonalized");
+        Preconditions.checkNotNull(
+            A,
+            "DiagonalizationLogic: matrix must not be null"
+        );
+        Preconditions.checkArgument(
+            A.rows() == A.cols(),
+            "DiagonalizationLogic: only square matrices can be diagonalized: %s x %s",
+            A.rows(),
+            A.cols()
+        );
         this.A = A;
+        checkDiagonalizationLogic();
     }
 
     /**
@@ -58,10 +67,11 @@ public final class DiagonalizationLogic {
      * @throws IllegalStateException if the eigenvalues cannot be computed
      */
     public Diagonalization diagonalize()
-            throws ComplexEigenvaluesException,
-            DefectiveMatrixException,
-            DependentEigenvectorsException
+        throws ComplexEigenvaluesException,
+        DefectiveMatrixException,
+        DependentEigenvectorsException
     {
+        checkDiagonalizationLogic();
         final int n = A.rows();
         final double scale = getScale(A);
         final double tolerance = CLUSTER_TOLERANCE * scale;
@@ -85,7 +95,10 @@ public final class DiagonalizationLogic {
                 column++;
             }
         }
-        Preconditions.checkState(column == n, "Every eigenvalue must contribute exactly one eigenvector");
+        Preconditions.checkState(
+            column == n,
+            "DiagonalizationLogic.diagonalize: every eigenvalue must contribute exactly one eigenvector"
+        );
 
         final Matrix P = new Matrix(eigenvectorData);
         final Matrix inverseP = getInverse(P);
@@ -133,7 +146,7 @@ public final class DiagonalizationLogic {
         final double[][] Q,
         final double tolerance
     )
-            throws ComplexEigenvaluesException
+        throws ComplexEigenvaluesException
     {
         final double norm = getFrobeniusNorm(H);
         int high = H.length - 1;
@@ -161,7 +174,10 @@ public final class DiagonalizationLogic {
                 iterations = 0;
             } else {
                 iterations++;
-                Preconditions.checkState(iterations <= MAX_ITERATIONS, "QR iteration did not converge");
+                Preconditions.checkState(
+                    iterations <= MAX_ITERATIONS,
+                    "DiagonalizationLogic.reduceToSchur: QR iteration did not converge"
+                );
                 francisStep(H, Q, low, high, iterations);
             }
         }
@@ -231,7 +247,7 @@ public final class DiagonalizationLogic {
         final int p,
         final double tolerance
     )
-            throws ComplexEigenvaluesException
+        throws ComplexEigenvaluesException
     {
         final int n = H.length;
         final double a = H[p][p];
@@ -326,7 +342,7 @@ public final class DiagonalizationLogic {
         final Cluster cluster,
         final double scale
     )
-            throws DefectiveMatrixException
+        throws DefectiveMatrixException
     {
         final int n = T.length;
 
@@ -396,7 +412,7 @@ public final class DiagonalizationLogic {
     private static Matrix getInverse(
         final Matrix P
     )
-            throws DependentEigenvectorsException
+        throws DependentEigenvectorsException
     {
         final Matrix inverse;
         try {
@@ -417,7 +433,10 @@ public final class DiagonalizationLogic {
         try {
             return matrix.multiply(vector);
         } catch (MatrixMultiplyDimMismatchException e) {
-            throw new IllegalStateException("The dimensions were expected to match", e);
+            throw new IllegalStateException(
+                "DiagonalizationLogic.multiplyKnownDimensions: the dimensions were expected to match",
+                e
+            );
         }
     }
     // Turns x, in place, into the unit vector v for which (I - 2vv^T)x is a multiple of the first basis vector. Adding
@@ -512,6 +531,17 @@ public final class DiagonalizationLogic {
     ) {
         final double maxAbs = A.maxAbs();
         return (maxAbs == 0) ? 1 : maxAbs;
+    }
+    // Checks that the matrix being diagonalized exists and is square.
+    private void checkDiagonalizationLogic() {
+        Preconditions.checkState(
+            A != null,
+            "DiagonalizationLogic: matrix must not be null"
+        );
+        Preconditions.checkState(
+            A.rows() == A.cols(),
+            "DiagonalizationLogic: matrix must be square"
+        );
     }
 
 }

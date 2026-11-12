@@ -23,9 +23,10 @@ public final class MatrixLogic {
     ) {
         Preconditions.checkNotNull(
             A,
-            "Matrix must not be null"
+            "MatrixLogic: matrix must not be null"
         );
         this.A = A;
+        checkMatrixLogic();
     }
 
     /**
@@ -41,7 +42,11 @@ public final class MatrixLogic {
     )
         throws MatrixMultiplyDimMismatchException
     {
-        Preconditions.checkNotNull(other, "Other matrix must not be null");
+        checkMatrixLogic();
+        Preconditions.checkNotNull(
+            other,
+            "MatrixLogic.multiply: other matrix must not be null"
+        );
 
         if (A.cols() != other.rows()) {
             throw new MatrixMultiplyDimMismatchException();
@@ -75,6 +80,7 @@ public final class MatrixLogic {
      * @return a matrix in reduced row echelon form
      */
     public Matrix rref() {
+        checkMatrixLogic();
         return RowReducer.reduce(A).reduced();
     }
     /**
@@ -86,6 +92,7 @@ public final class MatrixLogic {
     public Matrix inverse()
         throws InverseNotAvailableException
     {
+        checkMatrixLogic();
         if (A.rows() != A.cols()) {
             throw new InverseNotAvailableException();
         }
@@ -105,6 +112,7 @@ public final class MatrixLogic {
     public double determinant()
         throws DeterminantDoesNotExistException
     {
+        checkMatrixLogic();
         if (A.rows() != A.cols()) {
             throw new DeterminantDoesNotExistException();
         }
@@ -135,6 +143,13 @@ public final class MatrixLogic {
             }
         }
         return determinant;
+    }
+    // Checks that the matrix being worked on exists.
+    private void checkMatrixLogic() {
+        Preconditions.checkState(
+            A != null,
+            "MatrixLogic: matrix must not be null"
+        );
     }
 
 }

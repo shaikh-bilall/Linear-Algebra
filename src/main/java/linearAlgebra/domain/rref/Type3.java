@@ -43,12 +43,12 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements Oper
             sourceRow
         );
         Preconditions.checkArgument(
-            scalar != 0,
-            "Type3: scalar must be non-zero"
-        );
-        Preconditions.checkArgument(
             Double.isFinite(scalar),
             "Type3: scalar must be finite"
+        );
+        Preconditions.checkArgument(
+            scalar != 0,
+            "Type3: scalar must be non-zero"
         );
         this.sourceRow = sourceRow;
         this.targetRow = targetRow;

@@ -29,12 +29,12 @@ public record Type2(int targetRow, double scalar) implements OperationRREF {
             targetRow
         );
         Preconditions.checkArgument(
-            scalar != 0,
-            "Type2: scalar must be non-zero"
-        );
-        Preconditions.checkArgument(
             Double.isFinite(scalar),
             "Type2: scalar must be finite"
+        );
+        Preconditions.checkArgument(
+            scalar != 0,
+            "Type2: scalar must be non-zero"
         );
         this.targetRow = targetRow;
         this.scalar = scalar;
