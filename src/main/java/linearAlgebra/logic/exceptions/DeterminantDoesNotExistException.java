@@ -1,4 +1,4 @@
-package linearAlgebra.domain.exceptions;
+package linearAlgebra.logic.exceptions;
 
 /**
  * Thrown when a determinant is requested for a matrix that is not square.

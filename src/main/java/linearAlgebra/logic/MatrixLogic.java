@@ -2,8 +2,8 @@ package linearAlgebra.logic;
 
 import com.google.common.base.Preconditions;
 
-import linearAlgebra.domain.exceptions.DeterminantDoesNotExistException;
-import linearAlgebra.domain.exceptions.InverseNotAvailableException;
+import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
+import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.rref.RowReducer;
@@ -26,11 +26,8 @@ public final class MatrixLogic {
     public MatrixLogic(
         final Matrix A
     ) {
-        Preconditions.checkNotNull(
-            A,
-            "MatrixLogic: matrix must not be null"
-        );
         this.A = A;
+
         checkMatrixLogic();
     }
 
@@ -85,6 +82,7 @@ public final class MatrixLogic {
      */
     public Matrix rref() {
         checkMatrixLogic();
+
         return RowReducer.reduce(A).reduced();
     }
     /**
@@ -97,6 +95,7 @@ public final class MatrixLogic {
         throws InverseNotAvailableException
     {
         checkMatrixLogic();
+
         if (A.rows() != A.cols()) {
             throw new InverseNotAvailableException();
         }
@@ -117,10 +116,19 @@ public final class MatrixLogic {
         throws DeterminantDoesNotExistException
     {
         checkMatrixLogic();
+
         if (A.rows() != A.cols()) {
             throw new DeterminantDoesNotExistException();
         }
         return getDeterminant(RowReducer.reduce(A));
+    }
+
+    // Checks that the matrix being worked on exists.
+    private void checkMatrixLogic() {
+        Preconditions.checkNotNull(
+            A,
+            "MatrixLogic: matrix must not be null"
+        );
     }
 
     // Returns the determinant from the operations recorded while reducing a square matrix.
@@ -144,13 +152,6 @@ public final class MatrixLogic {
             }
         }
         return determinant;
-    }
-    // Checks that the matrix being worked on exists.
-    private void checkMatrixLogic() {
-        Preconditions.checkState(
-            A != null,
-            "MatrixLogic: matrix must not be null"
-        );
     }
 
 }

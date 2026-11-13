@@ -24,19 +24,8 @@ public record Vector(double[] data) implements Iterable<Double> {
     public Vector(
         final double[] data
     ) {
-        Preconditions.checkNotNull(
-            data,
-            "Vector: data must not be null"
-        );
-        Preconditions.checkArgument(
-            data.length > 0,
-            "Vector: vector must have at least one element"
-        );
-        Preconditions.checkArgument(
-            Arrays.stream(data).allMatch(Double::isFinite),
-            "Vector: all entries must be finite numbers"
-        );
         this.data = data.clone();
+
         checkVector();
     }
     /**
@@ -58,6 +47,7 @@ public record Vector(double[] data) implements Iterable<Double> {
     @Override
     public double[] data() {
         checkVector();
+
         return data.clone();
     }
     /**
@@ -74,6 +64,7 @@ public record Vector(double[] data) implements Iterable<Double> {
             other,
             "Vector.add"
         );
+
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
             result[i] += other.data[i];
@@ -100,6 +91,7 @@ public record Vector(double[] data) implements Iterable<Double> {
             "Vector.scale: scalar must be finite: %s",
             scalar
         );
+
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
             result[i] *= scalar;
@@ -125,6 +117,7 @@ public record Vector(double[] data) implements Iterable<Double> {
             other,
             "Vector.dot"
         );
+
         double result = 0;
         for (int i = 0; i < data.length; i++) {
             result += this.data[i] * other.data[i];
@@ -142,6 +135,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      */
     public double norm() {
         checkVector();
+
         double norm = 0;
         for (double v : data) {
             norm = Math.hypot(norm, v); // hypot avoids overflowing on the intermediate squares
@@ -191,13 +185,7 @@ public record Vector(double[] data) implements Iterable<Double> {
             index
         );
 
-        double value = data[index];
-        Preconditions.checkState(
-            Double.isFinite(value),
-            "Vector.get: entry must be finite: index %s",
-            index
-        );
-        return value;
+        return data[index];
     }
     /**
      * Returns the number of entries.
@@ -206,6 +194,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      */
     public int length() {
         checkVector();
+
         return data.length;
     }
     /**
@@ -217,6 +206,7 @@ public record Vector(double[] data) implements Iterable<Double> {
     @NonNull
     public Iterator<Double> iterator() {
         checkVector();
+
         return new Iterator<>() {
             private int currentIndex = 0;
 
@@ -237,6 +227,7 @@ public record Vector(double[] data) implements Iterable<Double> {
              */
             @Override
             public Double next()
+                throws NoSuchElementException
             {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
@@ -252,6 +243,7 @@ public record Vector(double[] data) implements Iterable<Double> {
      */
     public Vector copy() {
         checkVector();
+
         return new Vector(data);
     }
     /**
@@ -267,14 +259,15 @@ public record Vector(double[] data) implements Iterable<Double> {
         final Object otherObject
     ) {
         checkVector();
-        if (this == otherObject) {
-            return true;
-        }
+
+        boolean equals;
         if (!(otherObject instanceof Vector otherVector)) {
-            return false;
+            equals = false;
+        } else {
+            otherVector.checkVector();
+            equals = entriesEqual(data, otherVector.data);
         }
-        otherVector.checkVector();
-        return entriesEqual(data, otherVector.data);
+        return equals;
     }
     /**
      * Returns a hash code that agrees with {@link #equals}: vectors that are equal have the same hash code.
@@ -284,6 +277,7 @@ public record Vector(double[] data) implements Iterable<Double> {
     @Override
     public int hashCode() {
         checkVector();
+
         return entriesHashCode(data);
     }
     /**
@@ -305,15 +299,17 @@ public record Vector(double[] data) implements Iterable<Double> {
             second,
             "Vector.entriesEqual: second array must not be null"
         );
+
+        boolean entriesEqual;
         if (first.length != second.length) {
-            return false;
+            entriesEqual = false;
+        } else {
+            entriesEqual = Arrays.equals(
+                normalizeZeros(first),
+                normalizeZeros(second)
+            );
         }
-        for (int i = 0; i < first.length; i++) {
-            if (first[i] != second[i]) {
-                return false;
-            }
-        }
-        return true;
+        return entriesEqual;
     }
     /**
      * Returns a hash code of the entries of an array that agrees with {@link #entriesEqual}, so {@code 0.0} and
@@ -329,11 +325,21 @@ public record Vector(double[] data) implements Iterable<Double> {
             entries,
             "Vector.entriesHashCode: entries must not be null"
         );
-        int result = 1;
-        for (double entry : entries) {
-            result = 31 * result + Double.hashCode(entry + 0.0); // adding 0.0 turns -0.0 into 0.0
+
+        return Arrays.hashCode(normalizeZeros(entries));
+    }
+
+    // Returns a copy with every signed zero represented as positive zero.
+    private static double[] normalizeZeros(
+        final double[] entries
+    ) {
+        double[] normalizedEntries = entries.clone();
+        for (int i = 0; i < normalizedEntries.length; i++) {
+            if (normalizedEntries[i] == 0.0) {
+                normalizedEntries[i] = 0.0;
+            }
         }
-        return result;
+        return normalizedEntries;
     }
 
     // Checks that the other vector exists and has the same length as this one.
@@ -353,23 +359,32 @@ public record Vector(double[] data) implements Iterable<Double> {
             other.length(),
             this.length()
         );
+        Preconditions.checkArgument(
+            Arrays.stream(data).allMatch(Double::isFinite),
+            "%s: all entries must be finite numbers",
+            owner
+        );
     }
     // Checks the cheap structural invariants: the data exists and has at least one entry.
     private void checkVector() {
-        Preconditions.checkState(
-            data != null,
+        Preconditions.checkNotNull(
+            data,
             "Vector: data must not be null"
         );
         Preconditions.checkState(
             data.length > 0,
             "Vector: vector must have at least one element"
         );
+        Preconditions.checkState(
+            Arrays.stream(data).allMatch(Double::isFinite),
+            "Vector: all entries must be finite numbers"
+        );
     }
     // Returns a new array of the given size, filled with zeros.
     private static double[] zeros(
         final int size
     ) {
-        Preconditions.checkArgument(
+        Preconditions.checkState(
             size > 0,
             "Vector: size must be positive: %s",
             size

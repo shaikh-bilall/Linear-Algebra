@@ -3,10 +3,10 @@ package linearAlgebra.logic;
 import com.google.common.base.Preconditions;
 
 import linearAlgebra.domain.Diagonalization;
-import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
-import linearAlgebra.domain.exceptions.DefectiveMatrixException;
-import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
-import linearAlgebra.domain.exceptions.InverseNotAvailableException;
+import linearAlgebra.logic.exceptions.ComplexEigenvaluesException;
+import linearAlgebra.logic.exceptions.DefectiveMatrixException;
+import linearAlgebra.logic.exceptions.DependentEigenvectorsException;
+import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
@@ -47,17 +47,8 @@ public final class DiagonalizationLogic {
     public DiagonalizationLogic(
         final Matrix A
     ) {
-        Preconditions.checkNotNull(
-            A,
-            "DiagonalizationLogic: matrix must not be null"
-        );
-        Preconditions.checkArgument(
-            A.rows() == A.cols(),
-            "DiagonalizationLogic: only square matrices can be diagonalized: %s x %s",
-            A.rows(),
-            A.cols()
-        );
         this.A = A;
+
         checkDiagonalizationLogic();
     }
 
@@ -107,6 +98,18 @@ public final class DiagonalizationLogic {
         final Matrix P = new Matrix(eigenvectorData);
         final Matrix inverseP = getInverse(P);
         return new Diagonalization(P, new Matrix(diagonalData), inverseP);
+    }
+
+    // Checks that the matrix being diagonalized exists and is square.
+    private void checkDiagonalizationLogic() {
+        Preconditions.checkNotNull(
+            A,
+            "DiagonalizationLogic: matrix must not be null"
+        );
+        Preconditions.checkState(
+            A.rows() == A.cols(),
+            "DiagonalizationLogic: matrix must be square"
+        );
     }
 
     // Reduces H to Hessenberg form with Householder reflections, accumulating them in Q.
@@ -508,17 +511,6 @@ public final class DiagonalizationLogic {
     ) {
         final double maxAbs = A.maxAbs();
         return (maxAbs == 0) ? 1 : maxAbs;
-    }
-    // Checks that the matrix being diagonalized exists and is square.
-    private void checkDiagonalizationLogic() {
-        Preconditions.checkState(
-            A != null,
-            "DiagonalizationLogic: matrix must not be null"
-        );
-        Preconditions.checkState(
-            A.rows() == A.cols(),
-            "DiagonalizationLogic: matrix must be square"
-        );
     }
 
 }

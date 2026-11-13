@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.HashSet;
 import java.util.Set;
 
+import static linearAlgebra.TestUtils.assertMatrixEquals;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DiagonalizationTest {
@@ -17,35 +18,21 @@ class DiagonalizationTest {
     @Test
     void constructorStoresThePDAndInverseMatrices() {
         var d = new Diagonalization(sampleP(), sampleD(), sampleInverseP());
-        assertMatrixEquals(new double[][]{{1, 1}, {0, 1}}, d.P());
-        assertMatrixEquals(new double[][]{{2, 0}, {0, 3}}, d.D());
-        assertMatrixEquals(new double[][]{{1, -1}, {0, 1}}, d.inverseP());
+        assertMatrixEquals(new double[][]{{1, 1}, {0, 1}}, d.P(), 0.0);
+        assertMatrixEquals(new double[][]{{2, 0}, {0, 3}}, d.D(), 0.0);
+        assertMatrixEquals(new double[][]{{1, -1}, {0, 1}}, d.inverseP(), 0.0);
     }
     @Test
     void constructorAcceptsASingleEntry() {
         var d = new Diagonalization(
-                new Matrix(new double[][]{{1}}), new Matrix(new double[][]{{-4}}), new Matrix(new double[][]{{1}})
+            new Matrix(new double[][]{{1}}), new Matrix(new double[][]{{-4}}), new Matrix(new double[][]{{1}})
         );
         assertEquals(-4.0, d.D().get(0, 0), 0.0);
     }
     @Test
     void constructorAcceptsZerosOnTheDiagonalOfD() {
         var d = new Diagonalization(sampleP(), new Matrix(new double[][]{{0, 0}, {0, 0}}), sampleInverseP());
-        assertMatrixEquals(new double[][]{{0, 0}, {0, 0}}, d.D());
-    }
-    @Test
-    void constructorCopiesEveryMatrix() {
-        var p = sampleP();
-        var diagonal = sampleD();
-        var inverse = sampleInverseP();
-        var d = new Diagonalization(p, diagonal, inverse);
-        p.data()[0][0] = 99;
-        diagonal.data()[0][0] = 99;
-        inverse.data()[0][0] = 99;
-        assertNotSame(p, d.P());
-        assertMatrixEquals(new double[][]{{1, 1}, {0, 1}}, d.P());
-        assertMatrixEquals(new double[][]{{2, 0}, {0, 3}}, d.D());
-        assertMatrixEquals(new double[][]{{1, -1}, {0, 1}}, d.inverseP());
+        assertMatrixEquals(new double[][]{{0, 0}, {0, 0}}, d.D(), 0.0);
     }
     @Test
     void constructorRejectsANullMatrix() {
@@ -56,8 +43,8 @@ class DiagonalizationTest {
     @ParameterizedTest(name = "{0}x{1} is rejected")
     @CsvSource({"2, 3", "3, 2", "1, 4"})
     void constructorRejectsANonSquareP(
-            int rows,
-            int cols
+        int rows,
+        int cols
     ) {
         var nonSquare = new Matrix(new double[rows][cols]);
         assertThrows(IllegalStateException.class, () -> new Diagonalization(nonSquare, nonSquare, nonSquare));
@@ -72,7 +59,7 @@ class DiagonalizationTest {
     @ParameterizedTest(name = "off-diagonal entry {0} is rejected")
     @ValueSource(doubles = {1, -1, 1e-12, 1e-300})
     void constructorRejectsAnyNonzeroOffDiagonalEntryInD(
-            double entry
+        double entry
     ) {
         var above = new Matrix(new double[][]{{2, entry}, {0, 3}});
         var below = new Matrix(new double[][]{{2, 0}, {entry, 3}});
@@ -117,19 +104,11 @@ class DiagonalizationTest {
     void equalsTreatsNegativeZeroLikeZero() {
         var diagonalization = sampleDiagonalization();
         var negativeZeros = new Diagonalization(
-                diagonalization.P(),
-                new Matrix(new double[][]{{2, -0.0}, {-0.0, 3}}),
-                diagonalization.inverseP());
+            diagonalization.P(),
+            new Matrix(new double[][]{{2, -0.0}, {-0.0, 3}}),
+            diagonalization.inverseP());
         assertEquals(diagonalization, negativeZeros);
         assertEquals(diagonalization.hashCode(), negativeZeros.hashCode());
-    }
-    @Test
-    void equalsIsUnaffectedByLaterChangesToTheArraysItWasBuiltFrom() {
-        double[][] pData = {{1, 1}, {0, 1}};
-        var diagonalization = new Diagonalization(
-                new Matrix(pData), new Matrix(new double[][]{{2, 0}, {0, 3}}), new Matrix(new double[][]{{1, -1}, {0, 1}}));
-        pData[0][0] = 99;
-        assertEquals(sampleDiagonalization(), diagonalization);
     }
     @Test
     void equalDiagonalizationsAreInterchangeableAsHashKeys() {
@@ -139,21 +118,9 @@ class DiagonalizationTest {
         diagonalizations.add(sampleDiagonalization());
         assertEquals(1, diagonalizations.size());
     }
-    @Test
-    void equalityOnACorruptedDiagonalizationIsRejected() {
-        var healthy = sampleDiagonalization();
-        for (int which = 0; which < 3; which++) {
-            var corrupted = sampleDiagonalization();
-            Matrix[] matrices = {corrupted.P(), corrupted.D(), corrupted.inverseP()};
-            matrices[which].data()[0][0] = Double.NaN;
-            assertThrows(IllegalStateException.class, () -> corrupted.equals(healthy));
-            assertThrows(IllegalStateException.class, corrupted::hashCode);
-        }
-    }
 
     // ---------- helpers ----------
 
-    // A fresh matrix each call, so tests can mutate one copy and compare against another.
     private static Matrix sampleP() {
         return new Matrix(new double[][]{{1, 1}, {0, 1}});
     }
@@ -163,25 +130,12 @@ class DiagonalizationTest {
     private static Matrix sampleInverseP() {
         return new Matrix(new double[][]{{1, -1}, {0, 1}});
     }
-    // Helper to assert that a matrix has the expected values, with a clear message on failure.
-    private static void assertMatrixEquals(
-            double[][] expected,
-            Matrix actual
-    ) {
-        assertEquals(expected.length, actual.rows(), "row count");
-        assertEquals(expected[0].length, actual.cols(), "column count");
-        for (int i = 0; i < expected.length; i++) {
-            for (int j = 0; j < expected[0].length; j++) {
-                assertEquals(expected[i][j], actual.get(i, j), 0.0, "mismatch at (" + i + ", " + j + ")");
-            }
-        }
-    }
     // A diagonalization of an upper triangular matrix: P D P^-1 with D = diag(2, 3).
     private static Diagonalization sampleDiagonalization() {
         return new Diagonalization(
-                new Matrix(new double[][]{{1, 1}, {0, 1}}),
-                new Matrix(new double[][]{{2, 0}, {0, 3}}),
-                new Matrix(new double[][]{{1, -1}, {0, 1}}));
+            new Matrix(new double[][]{{1, 1}, {0, 1}}),
+            new Matrix(new double[][]{{2, 0}, {0, 3}}),
+            new Matrix(new double[][]{{1, -1}, {0, 1}}));
     }
 
 }

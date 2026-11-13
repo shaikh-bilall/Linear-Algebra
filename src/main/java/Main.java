@@ -1,9 +1,9 @@
 import linearAlgebra.domain.Diagonalization;
-import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
-import linearAlgebra.domain.exceptions.DefectiveMatrixException;
-import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
-import linearAlgebra.domain.exceptions.DeterminantDoesNotExistException;
-import linearAlgebra.domain.exceptions.InverseNotAvailableException;
+import linearAlgebra.logic.exceptions.ComplexEigenvaluesException;
+import linearAlgebra.logic.exceptions.DefectiveMatrixException;
+import linearAlgebra.logic.exceptions.DependentEigenvectorsException;
+import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
+import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.logic.DiagonalizationLogic;
@@ -144,7 +144,7 @@ public class Main {
         System.out.println("=== " + title + " ===");
         System.out.println();
     }
-    // Prints a labelled matrix with one row per line.
+    // Prints a labeled matrix with one row per line.
     private static void print(
         final String label,
         final Matrix matrix

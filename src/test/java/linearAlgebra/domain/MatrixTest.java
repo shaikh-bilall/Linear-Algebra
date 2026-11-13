@@ -1,5 +1,6 @@
 package linearAlgebra.domain;
 
+import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -7,12 +8,21 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.*;
 
+import static linearAlgebra.TestUtils.assertMatrixEquals;
+import static linearAlgebra.TestUtils.assertVectorEquals;
+import static linearAlgebra.TestUtils.identity;
+import static linearAlgebra.TestUtils.inverseOf;
+import static linearAlgebra.TestUtils.randomData;
+import static linearAlgebra.TestUtils.randomEntries;
+import static linearAlgebra.TestUtils.randomScalar;
+import static linearAlgebra.TestUtils.sampleData;
+import static linearAlgebra.TestUtils.shuffledIndices;
+import static linearAlgebra.TestUtils.vector;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MatrixTest {
 
     private static final double TOL = 1e-12;
-    private static final double[] SCALARS = {-3, -2, -1, -0.5, 0.5, 1, 2, 3};
 
     // ---------- constructor ----------
 
@@ -54,11 +64,35 @@ class MatrixTest {
     @ParameterizedTest(name = "entry {0} is rejected")
     @ValueSource(doubles = {Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
     void constructorRejectsNonFiniteEntries(
-            double entry
+        double entry
     ) {
         assertThrows(IllegalStateException.class, () -> new Matrix(new double[][]{{1, entry}, {3, 4}}));
         assertThrows(IllegalStateException.class, () -> new Matrix(new double[][]{{1, 2}, {3, entry}}));
         assertThrows(IllegalStateException.class, () -> new Matrix(new double[][]{{entry}}));
+    }
+
+    // ---------- identity ----------
+
+    @ParameterizedTest(name = "identity {0}x{0}")
+    @ValueSource(ints = {1, 2, 5})
+    void identityHasOnesOnTheDiagonalAndZerosElsewhere(
+        int n
+    ) {
+        Matrix matrix = Matrix.identity(n);
+        assertEquals(n, matrix.rows());
+        assertEquals(n, matrix.cols());
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                assertEquals((i == j) ? 1.0 : 0.0, matrix.get(i, j), 0.0, "entry (" + i + ", " + j + ")");
+            }
+        }
+    }
+    @ParameterizedTest(name = "dimension {0} is rejected")
+    @ValueSource(ints = {0, -1, Integer.MIN_VALUE})
+    void identityRejectsNonPositiveDimensions(
+        int dimension
+    ) {
+        assertThrows(IllegalArgumentException.class, () -> Matrix.identity(dimension));
     }
 
     // ---------- rows, cols and data ----------
@@ -66,20 +100,55 @@ class MatrixTest {
     @ParameterizedTest(name = "{0}x{1}")
     @CsvSource({"1, 1", "1, 4", "4, 1", "3, 3", "2, 5"})
     void rowsAndColsReportTheShape(
-            int rows,
-            int cols
+        int rows,
+        int cols
     ) {
         var matrix = new Matrix(new double[rows][cols]);
         assertEquals(rows, matrix.rows());
         assertEquals(cols, matrix.cols());
     }
-    // The linearAlgebra.logic classes mutate matrices through data(), so the accessor must hand out the live array.
     @Test
-    void dataExposesTheLiveStorage() {
+    void dataReturnsACopy() {
         var matrix = new Matrix(sampleData());
-        assertSame(matrix.data(), matrix.data());
-        matrix.data()[1][0] = 30;
-        assertEquals(30.0, matrix.get(1, 0), 0.0);
+        double[][] first = matrix.data();
+        double[][] second = matrix.data();
+        assertNotSame(first, second);
+        assertNotSame(first[0], second[0]);
+        assertTrue(Arrays.deepEquals(first, second));
+
+        first[1][0] = 30;
+        first[2] = new double[]{7, 7};
+        assertMatrixEquals(sampleData(), matrix);
+        assertEquals(3.0, matrix.get(1, 0), 0.0);
+    }
+
+    // ---------- maxAbs ----------
+
+    @Test
+    void maxAbsReturnsTheLargestAbsoluteEntry() {
+        assertEquals(7.0, new Matrix(new double[][]{{1, -7}, {3, 4}}).maxAbs(), 0.0);
+        assertEquals(5.0, new Matrix(new double[][]{{-5, 2}, {1, 3}}).maxAbs(), 0.0);
+        assertEquals(0.5, new Matrix(new double[][]{{-0.25, 0.5, 0.125}}).maxAbs(), 0.0);
+    }
+    @Test
+    void maxAbsOfAZeroMatrixIsZero() {
+        assertEquals(0.0, new Matrix(new double[3][2]).maxAbs(), 0.0);
+    }
+    @Test
+    void maxAbsBoundsEveryEntryAndIsReachedByOne() {
+        Random random = new Random(12);
+        for (int trial = 0; trial < 200; trial++) {
+            var matrix = new Matrix(randomData(random, 1 + random.nextInt(5), 1 + random.nextInt(5), 5));
+            double maxAbs = matrix.maxAbs();
+            boolean reached = false;
+            for (int i = 0; i < matrix.rows(); i++) {
+                for (int j = 0; j < matrix.cols(); j++) {
+                    assertTrue(Math.abs(matrix.get(i, j)) <= maxAbs, "entry (" + i + ", " + j + ")");
+                    reached |= Math.abs(matrix.get(i, j)) == maxAbs;
+                }
+            }
+            assertTrue(reached, "no entry has the absolute value " + maxAbs);
+        }
     }
 
     // ---------- get ----------
@@ -97,11 +166,11 @@ class MatrixTest {
     @ParameterizedTest(name = "get({0}, {1}) is rejected")
     @CsvSource({"-1, 0", "0, -1", "3, 0", "0, 2", "-1, -1", "3, 2", "-2147483648, 0", "0, 2147483647"})
     void getRejectsOutOfBoundsIndices(
-            int row,
-            int col
+        int row,
+        int col
     ) {
         var matrix = new Matrix(sampleData());
-        assertThrows(IllegalStateException.class, () -> matrix.get(row, col));
+        assertThrows(IllegalArgumentException.class, () -> matrix.get(row, col));
     }
 
     // ---------- getRow ----------
@@ -117,7 +186,7 @@ class MatrixTest {
     void getRowReturnsACopyOfTheRow() {
         var matrix = new Matrix(sampleData());
         Vector row = matrix.getRow(1);
-        row.data()[0] = 99;
+        assertVectorEquals(new double[]{3, 4}, row);
         assertMatrixEquals(sampleData(), matrix);
     }
     @Test
@@ -137,10 +206,10 @@ class MatrixTest {
     @ParameterizedTest(name = "row {0} is rejected")
     @ValueSource(ints = {-1, 3, 100, Integer.MIN_VALUE})
     void getRowRejectsOutOfBoundsIndex(
-            int row
+        int row
     ) {
         var matrix = new Matrix(sampleData());
-        assertThrows(IllegalStateException.class, () -> matrix.getRow(row));
+        assertThrows(IllegalArgumentException.class, () -> matrix.getRow(row));
     }
 
     // ---------- copy ----------
@@ -149,17 +218,16 @@ class MatrixTest {
     void copyHasTheSameShapeAndEntries() {
         var matrix = new Matrix(sampleData());
         Matrix copy = matrix.copy();
-        assertNotSame(matrix, copy);
+        assertEquals(matrix.rows(), copy.rows());
+        assertEquals(matrix.cols(), copy.cols());
         assertMatrixEquals(sampleData(), copy);
     }
     @Test
-    void copyIsIndependentOfTheOriginal() {
+    void copyIsEqualToTheOriginalButIsANewInstance() {
         var matrix = new Matrix(sampleData());
         Matrix copy = matrix.copy();
-        copy.data()[0][0] = 99;
-        assertMatrixEquals(sampleData(), matrix);
-        matrix.data()[2][1] = -99;
-        assertEquals(6.0, copy.get(2, 1), 0.0);
+        assertEquals(matrix, copy);
+        assertNotSame(matrix, copy);
     }
     @Test
     void copyMatchesTheOriginalOnRandomMatrices() {
@@ -208,7 +276,9 @@ class MatrixTest {
     }
     // (A^T x) . y = x . (A y) ties transpose to multiply and dot without re-implementing either.
     @Test
-    void transposeMovesAcrossTheDotProduct() {
+    void transposeMovesAcrossTheDotProduct()
+        throws Exception
+    {
         Random random = new Random(4);
         for (int trial = 0; trial < 200; trial++) {
             int rows = 1 + random.nextInt(5);
@@ -220,28 +290,33 @@ class MatrixTest {
         }
     }
     @Test
-    void transposeLeavesTheOriginalUnchangedAndReturnsAnIndependentMatrix() {
+    void transposeLeavesTheOriginalUnchanged() {
         var matrix = new Matrix(sampleData());
-        Matrix transposed = matrix.transpose();
-        transposed.data()[0][0] = 99;
+        matrix.transpose();
         assertMatrixEquals(sampleData(), matrix);
     }
 
     // ---------- multiply (matrix times vector) ----------
 
     @Test
-    void multiplyComputesAKnownProduct() {
+    void multiplyComputesAKnownProduct()
+        throws Exception
+    {
         var matrix = new Matrix(new double[][]{{1, 2}, {3, 4}});
         assertVectorEquals(new double[]{17, 39}, matrix.multiply(vector(5, 6)));
     }
     @Test
-    void multiplyOfARectangularMatrixHasOneEntryPerRow() {
+    void multiplyOfARectangularMatrixHasOneEntryPerRow()
+        throws Exception
+    {
         var wide = new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}});
         assertVectorEquals(new double[]{-2, -2}, wide.multiply(vector(1, 0, -1)));
         assertVectorEquals(new double[]{5, 11, 17}, new Matrix(sampleData()).multiply(vector(1, 2)));
     }
     @Test
-    void multiplyByTheIdentityAndByZeroBehaveAsExpected() {
+    void multiplyByTheIdentityAndByZeroBehaveAsExpected()
+        throws Exception
+    {
         Random random = new Random(5);
         for (int trial = 0; trial < 100; trial++) {
             int n = 1 + random.nextInt(6);
@@ -251,7 +326,9 @@ class MatrixTest {
         }
     }
     @Test
-    void multiplyIsLinear() {
+    void multiplyIsLinear()
+        throws Exception
+    {
         Random random = new Random(6);
         for (int trial = 0; trial < 200; trial++) {
             int rows = 1 + random.nextInt(5);
@@ -265,7 +342,9 @@ class MatrixTest {
         }
     }
     @Test
-    void multiplyChangesNeitherOperand() {
+    void multiplyChangesNeitherOperand()
+        throws Exception
+    {
         var matrix = new Matrix(sampleData());
         var v = vector(1, 2);
         matrix.multiply(v);
@@ -275,8 +354,8 @@ class MatrixTest {
     @Test
     void multiplyRejectsAVectorOfTheWrongLength() {
         var matrix = new Matrix(sampleData());
-        assertThrows(IllegalStateException.class, () -> matrix.multiply(vector(1, 2, 3)));
-        assertThrows(IllegalStateException.class, () -> matrix.multiply(vector(1)));
+        assertThrows(MatrixMultiplyDimMismatchException.class, () -> matrix.multiply(vector(1, 2, 3)));
+        assertThrows(MatrixMultiplyDimMismatchException.class, () -> matrix.multiply(vector(1)));
     }
     @Test
     void multiplyRejectsANullVector() {
@@ -319,19 +398,18 @@ class MatrixTest {
         }
     }
     @Test
-    void mergeLeavesBothOperandsUnchangedAndReturnsAnIndependentMatrix() {
+    void mergeLeavesBothOperandsUnchanged() {
         var left = new Matrix(new double[][]{{1, 2}, {3, 4}});
         var right = new Matrix(new double[][]{{5}, {6}});
-        Matrix merged = left.merge(right);
-        merged.data()[0][0] = 99;
+        left.merge(right);
         assertMatrixEquals(new double[][]{{1, 2}, {3, 4}}, left);
         assertMatrixEquals(new double[][]{{5}, {6}}, right);
     }
     @Test
     void mergeRejectsMatricesWithDifferentRowCounts() {
         var matrix = new Matrix(sampleData());
-        assertThrows(IllegalStateException.class, () -> matrix.merge(new Matrix(new double[][]{{1}, {2}})));
-        assertThrows(IllegalStateException.class, () -> new Matrix(new double[][]{{1}}).merge(matrix));
+        assertThrows(IllegalArgumentException.class, () -> matrix.merge(new Matrix(new double[][]{{1}, {2}})));
+        assertThrows(IllegalArgumentException.class, () -> new Matrix(new double[][]{{1}}).merge(matrix));
     }
     @Test
     void mergeRejectsANullMatrix() {
@@ -377,15 +455,15 @@ class MatrixTest {
     @Test
     void permuteRowsRejectsAListOfTheWrongSize() {
         var matrix = new Matrix(sampleData());
-        assertThrows(IllegalStateException.class, () -> matrix.permuteRows(List.of(0, 1)));
-        assertThrows(IllegalStateException.class, () -> matrix.permuteRows(List.of(0, 1, 2, 0)));
+        assertThrows(IllegalArgumentException.class, () -> matrix.permuteRows(List.of(0, 1)));
+        assertThrows(IllegalArgumentException.class, () -> matrix.permuteRows(List.of(0, 1, 2, 0)));
     }
     @Test
     void permuteRowsRejectsAListThatIsNotAPermutation() {
         var matrix = new Matrix(sampleData());
-        assertThrows(IllegalStateException.class, () -> matrix.permuteRows(List.of(0, 0, 1))); // repeated index
-        assertThrows(IllegalStateException.class, () -> matrix.permuteRows(List.of(-1, 0, 1))); // negative index
-        assertThrows(IllegalStateException.class, () -> matrix.permuteRows(List.of(0, 1, 3))); // index too large
+        assertThrows(IllegalArgumentException.class, () -> matrix.permuteRows(List.of(0, 0, 1))); // repeated index
+        assertThrows(IllegalArgumentException.class, () -> matrix.permuteRows(List.of(-1, 0, 1))); // negative index
+        assertThrows(IllegalArgumentException.class, () -> matrix.permuteRows(List.of(0, 1, 3))); // index too large
     }
     @Test
     void permuteRowsRejectsANullListAndANullIndex() {
@@ -435,9 +513,9 @@ class MatrixTest {
     @Test
     void equalsFailsForDifferentDimensions() {
         var matrix = new Matrix(sampleData()); // 3x2
-        assertNotEquals(matrix, new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}})); // 2x3
-        assertNotEquals(matrix, new Matrix(new double[][]{{1, 2}, {3, 4}})); // fewer rows, same leading entries
-        assertNotEquals(matrix, new Matrix(new double[][]{{1}, {3}, {5}})); // fewer columns, same leading entries
+        assertNotEquals(new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}), matrix); // 2x3
+        assertNotEquals(new Matrix(new double[][]{{1, 2}, {3, 4}}), matrix); // fewer rows, same leading entries
+        assertNotEquals(new Matrix(new double[][]{{1}, {3}, {5}}), matrix); // fewer columns, same leading entries
         assertNotEquals(new Matrix(new double[][]{{1, 2, 3, 4}}), new Matrix(new double[][]{{1, 2}, {3, 4}})); // same entry count
     }
     @Test
@@ -503,146 +581,5 @@ class MatrixTest {
         assertFalse(matrices.contains(identity(2)));
         matrices.add(new Matrix(sampleData()));
         assertEquals(1, matrices.size());
-    }
-    @Test
-    void equalityOnACorruptedMatrixIsRejected() {
-        var healthy = new Matrix(sampleData());
-        var withNaN = new Matrix(sampleData());
-        withNaN.data()[0][0] = Double.NaN;
-        assertThrows(IllegalStateException.class, () -> withNaN.equals(healthy));
-        assertThrows(IllegalStateException.class, () -> healthy.equals(withNaN));
-        assertThrows(IllegalStateException.class, () -> withNaN.equals(withNaN));
-        assertThrows(IllegalStateException.class, withNaN::hashCode);
-
-        var withEmptyRow = new Matrix(sampleData());
-        withEmptyRow.data()[0] = new double[0];
-        assertThrows(IllegalStateException.class, () -> withEmptyRow.equals(healthy));
-        assertThrows(IllegalStateException.class, () -> healthy.equals(withEmptyRow));
-        assertThrows(IllegalStateException.class, withEmptyRow::hashCode);
-    }
-
-    // ---------- corrupted state ----------
-
-    // data() hands out the live arrays, so a test can break what the constructor guarantees.
-    // Every instance method has to notice instead of passing a NaN along.
-    @Test
-    void operationsOnACorruptedMatrixAreRejected() {
-        var corrupted = new Matrix(sampleData());
-        corrupted.data()[0][0] = Double.NaN;
-        assertThrows(IllegalStateException.class, () -> corrupted.get(0, 0));
-        assertThrows(IllegalStateException.class, () -> corrupted.getRow(0));
-        assertThrows(IllegalStateException.class, corrupted::copy);
-        assertThrows(IllegalStateException.class, corrupted::transpose);
-        assertThrows(IllegalStateException.class, () -> corrupted.multiply(vector(1, 1)));
-        assertThrows(IllegalStateException.class, () -> corrupted.merge(new Matrix(new double[][]{{1}, {2}, {3}})));
-        assertThrows(IllegalStateException.class, () -> corrupted.permuteRows(List.of(0, 1, 2)));
-    }
-    @Test
-    void aMatrixWhoseFirstRowBecameEmptyReportsNoColumns() {
-        var corrupted = new Matrix(sampleData());
-        corrupted.data()[0] = new double[0];
-        assertThrows(IllegalStateException.class, corrupted::cols);
-        assertThrows(IllegalStateException.class, corrupted::transpose);
-    }
-
-    // ---------- helpers ----------
-
-    private static double randomScalar(
-            Random random
-    ) {
-        return SCALARS[random.nextInt(SCALARS.length)];
-    }
-    // Integer entries in [-bound, bound].
-    private static double[][] randomData(
-            Random random,
-            int rows,
-            int cols,
-            int bound
-    ) {
-        double[][] data = new double[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                data[i][j] = random.nextInt(2 * bound + 1) - bound;
-            }
-        }
-        return data;
-    }
-    // Integer entries in [-10, 10].
-    private static double[] randomEntries(
-            Random random,
-            int size
-    ) {
-        double[] entries = new double[size];
-        for (int i = 0; i < size; i++) {
-            entries[i] = random.nextInt(21) - 10;
-        }
-        return entries;
-    }
-    private static List<Integer> shuffledIndices(
-            Random random,
-            int size
-    ) {
-        List<Integer> indices = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            indices.add(i);
-        }
-        Collections.shuffle(indices, random);
-        return indices;
-    }
-    // Permuting the rows by p and then by the inverse of p must restore the original order.
-    private static List<Integer> inverseOf(
-            List<Integer> permutation
-    ) {
-        Integer[] inverse = new Integer[permutation.size()];
-        for (int i = 0; i < permutation.size(); i++) {
-            inverse[permutation.get(i)] = i;
-        }
-        return Arrays.asList(inverse);
-    }
-    // A fresh 3x2 array each call, so tests can mutate one copy and compare against another.
-    private static double[][] sampleData() {
-        return new double[][]{{1, 2}, {3, 4}, {5, 6}};
-    }
-    private static Matrix identity(
-            int n
-    ) {
-        double[][] data = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            data[i][i] = 1;
-        }
-        return new Matrix(data);
-    }
-    private static Vector vector(
-            double... values
-    ) {
-        return new Vector(values);
-    }
-    private static void assertVectorEquals(
-            double[] expected,
-            Vector actual
-    ) {
-        assertEquals(expected.length, actual.length(), "vector length");
-        for (int i = 0; i < expected.length; i++) {
-            assertEquals(expected[i], actual.get(i), TOL, "mismatch at index " + i);
-        }
-    }
-    private static void assertMatrixEquals(
-            double[][] expected,
-            Matrix actual
-    ) {
-        assertMatrixEquals(new Matrix(expected), actual);
-    }
-    private static void assertMatrixEquals(
-            Matrix expected,
-            Matrix actual
-    ) {
-        assertEquals(expected.rows(), actual.rows(), "row count");
-        assertEquals(expected.cols(), actual.cols(), "column count");
-        for (int i = 0; i < expected.rows(); i++) {
-            for (int j = 0; j < expected.cols(); j++) {
-                assertEquals(expected.get(i, j), actual.get(i, j), TOL,
-                        "mismatch at (" + i + ", " + j + ")");
-            }
-        }
     }
 }

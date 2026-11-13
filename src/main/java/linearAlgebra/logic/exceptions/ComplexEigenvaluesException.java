@@ -1,4 +1,4 @@
-package linearAlgebra.domain.exceptions;
+package linearAlgebra.logic.exceptions;
 
 /**
  * Thrown when a matrix has complex eigenvalues and therefore cannot be diagonalized over the real

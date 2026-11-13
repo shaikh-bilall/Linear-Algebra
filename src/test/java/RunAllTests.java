@@ -12,11 +12,14 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 
 public class RunAllTests {
 
-    public static void main(String[] args) {
-        // Discovers every test class under this package, so tests added later are picked up automatically.
+    public static void main(
+        final String[] args
+    ) {
+        // Discovers every test class under the test classes directory, so tests added later are
+        // picked up automatically.
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
-                .selectors(selectClasspathRoots(Set.of(Path.of("target/test-classes"))))
-                .build();
+            .selectors(selectClasspathRoots(Set.of(Path.of("target/test-classes"))))
+            .build();
 
         Launcher launcher = LauncherFactory.create();
         SummaryGeneratingListener listener = new SummaryGeneratingListener();

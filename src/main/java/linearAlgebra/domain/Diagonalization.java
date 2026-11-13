@@ -26,50 +26,10 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
         final Matrix D,
         final Matrix inverseP
     ) {
-        Preconditions.checkNotNull(
-            P,
-            "Diagonalization: P must not be null"
-        );
-        Preconditions.checkNotNull(
-            D,
-            "Diagonalization: D must not be null"
-        );
-        Preconditions.checkNotNull(
-            inverseP,
-            "Diagonalization: inverse of P must not be null"
-        );
-        Preconditions.checkArgument(
-            P.rows() == P.cols(),
-            "Diagonalization: P must be square: %s x %s",
-            P.rows(),
-            P.cols()
-        );
-        Preconditions.checkArgument(
-            D.rows() == P.rows() &&
-                D.cols() == P.cols(),
-            "Diagonalization: D must have the same dimensions as P"
-        );
-        Preconditions.checkArgument(
-            inverseP.rows() == P.rows() &&
-                inverseP.cols() == P.cols(),
-            "Diagonalization: inverse of P must have the same dimensions as P"
-        );
-        for (int i = 0; i < D.rows(); i++) {
-            for (int j = 0; j < D.cols(); j++) {
-                if (i != j) {
-                    Preconditions.checkArgument(
-                        D.get(i, j) == 0,
-                        "Diagonalization: D must be diagonal: nonzero entry at row %s, column %s",
-                        i,
-                        j
-                    );
-                }
-            }
-        }
-
         this.P = P;
         this.D = D;
         this.inverseP = inverseP;
+
         checkDiagonalization();
     }
 
@@ -81,6 +41,7 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
     @Override
     public Matrix P() {
         checkDiagonalization();
+
         return P;
     }
     /**
@@ -91,6 +52,7 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
     @Override
     public Matrix D() {
         checkDiagonalization();
+
         return D;
     }
     /**
@@ -101,6 +63,7 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
     @Override
     public Matrix inverseP() {
         checkDiagonalization();
+
         return inverseP;
     }
     /**
@@ -115,17 +78,20 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
         final Object otherObject
     ) {
         checkDiagonalization();
-        if (this == otherObject) {
-            return true;
+
+        boolean equals;
+        if (!(otherObject instanceof Diagonalization(
+            Matrix otherP,
+            Matrix otherD,
+            Matrix otherInverseP
+        ))) {
+            equals = false;
+        } else {
+            equals = P.equals(otherP) &&
+                    D.equals(otherD) &&
+                    inverseP.equals(otherInverseP);
         }
-        if (!(otherObject instanceof Diagonalization(Matrix p, Matrix d, Matrix inverseP1))) {
-            return false;
-        }
-        return (
-            P.equals(p) &&
-                D.equals(d) &&
-                inverseP.equals(inverseP1)
-        );
+        return equals;
     }
     /**
      * Returns a hash code that agrees with {@link #equals}.
@@ -135,16 +101,22 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
     @Override
     public int hashCode() {
         checkDiagonalization();
+
         return Objects.hash(P, D, inverseP);
     }
-
     // Checks the structural invariants: all three matrices exist, are square and the same size, and D is diagonal.
     private void checkDiagonalization() {
-        Preconditions.checkState(
-            P != null &&
-                D != null &&
-                inverseP != null,
-            "Diagonalization: P, D and the inverse of P must not be null"
+        Preconditions.checkNotNull(
+            P,
+            "Diagonalization: P must not be null"
+        );
+        Preconditions.checkNotNull(
+            D,
+            "Diagonalization: D must not be null"
+        );
+        Preconditions.checkNotNull(
+            inverseP,
+            "Diagonalization: inverse of P must not be null"
         );
         Preconditions.checkState(
             P.rows() == P.cols(),

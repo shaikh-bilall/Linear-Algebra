@@ -1,9 +1,9 @@
 package linearAlgebra.logic;
 
 import linearAlgebra.domain.Diagonalization;
-import linearAlgebra.domain.exceptions.ComplexEigenvaluesException;
-import linearAlgebra.domain.exceptions.DefectiveMatrixException;
-import linearAlgebra.domain.exceptions.DependentEigenvectorsException;
+import linearAlgebra.logic.exceptions.ComplexEigenvaluesException;
+import linearAlgebra.logic.exceptions.DefectiveMatrixException;
+import linearAlgebra.logic.exceptions.DependentEigenvectorsException;
 import linearAlgebra.domain.Matrix;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,14 +12,16 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
 
+import static linearAlgebra.TestUtils.product;
+import static linearAlgebra.TestUtils.randomData;
+import static linearAlgebra.TestUtils.scaled;
+import static linearAlgebra.TestUtils.shuffledIndices;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,113 +38,113 @@ class DiagonalizationLogicTest {
     // name, input, expected eigenvalues (largest magnitude first, the larger value first when magnitudes tie)
     static Stream<Arguments> cases() {
         return Stream.of(
-                Arguments.of("1x1",
-                        new double[][]{{5}},
-                        new double[]{5}),
-                Arguments.of("1x1 zero",
-                        new double[][]{{0}},
-                        new double[]{0}),
-                Arguments.of("1x1 negative",
-                        new double[][]{{-4}},
-                        new double[]{-4}),
-                Arguments.of("2x2 diagonal, already in order",
-                        new double[][]{{3, 0}, {0, 2}},
-                        new double[]{3, 2}),
-                Arguments.of("2x2 diagonal, needs reordering",
-                        new double[][]{{1, 0}, {0, 5}},
-                        new double[]{5, 1}),
-                Arguments.of("2x2 scalar matrix",
-                        new double[][]{{3, 0}, {0, 3}},
-                        new double[]{3, 3}),
-                Arguments.of("2x2 non-symmetric",
-                        new double[][]{{4, 1}, {2, 3}},
-                        new double[]{5, 2}),
-                Arguments.of("2x2 with a negative eigenvalue",
-                        new double[][]{{1, 2}, {2, 1}},
-                        new double[]{3, -1}),
-                Arguments.of("2x2 swap (eigenvalues of equal magnitude)",
-                        new double[][]{{0, 1}, {1, 0}},
-                        new double[]{1, -1}),
-                Arguments.of("2x2 row-stochastic",
-                        new double[][]{{0.9, 0.1}, {0.5, 0.5}},
-                        new double[]{1, 0.4}),
-                Arguments.of("2x2 column-stochastic",
-                        new double[][]{{0.9, 0.5}, {0.1, 0.5}},
-                        new double[]{1, 0.4}),
-                Arguments.of("3x3 upper triangular",
-                        new double[][]{{1, 2, 3}, {0, 4, 5}, {0, 0, 6}},
-                        new double[]{6, 4, 1}),
-                Arguments.of("3x3 lower triangular",
-                        new double[][]{{2, 0, 0}, {1, 3, 0}, {4, 5, 1}},
-                        new double[]{3, 2, 1}),
-                Arguments.of("3x3 symmetric tridiagonal",
-                        new double[][]{{2, -1, 0}, {-1, 2, -1}, {0, -1, 2}},
-                        new double[]{2 + Math.sqrt(2), 2, 2 - Math.sqrt(2)}),
-                Arguments.of("3x3 identity",
-                        new double[][]{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
-                        new double[]{1, 1, 1}),
-                Arguments.of("3x3 zero",
-                        new double[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
-                        new double[]{0, 0, 0}),
-                Arguments.of("3x3 repeated eigenvalue (symmetric)",
-                        new double[][]{{3, 1, 1}, {1, 3, 1}, {1, 1, 3}},
-                        new double[]{5, 2, 2}),
-                Arguments.of("3x3 repeated eigenvalue (non-symmetric)",
-                        bidiagonalSimilar(2, 2, 5),
-                        new double[]{5, 2, 2}),
-                Arguments.of("3x3 two absorbing states",
-                        new double[][]{{1, 0, 0}, {0, 1, 0}, {0.2, 0.3, 0.5}},
-                        new double[]{1, 1, 0.5}),
-                Arguments.of("3x3 lazy random walk",
-                        new double[][]{{0.5, 0.5, 0}, {0.25, 0.5, 0.25}, {0, 0.5, 0.5}},
-                        new double[]{1, 0.5, 0}),
-                Arguments.of("3x3 periodic random walk (eigenvalues 1, 0 and -1)",
-                        new double[][]{{0, 1, 0}, {0.5, 0, 0.5}, {0, 1, 0}},
-                        new double[]{1, -1, 0}),
-                Arguments.of("4x4 periodic random walk (eigenvalues of both signs)",
-                        new double[][]{{0, 1, 0, 0}, {0.5, 0, 0.5, 0}, {0, 0.5, 0, 0.5}, {0, 0, 1, 0}},
-                        new double[]{1, -1, 0.5, -0.5}),
-                Arguments.of("4x4 distinct (non-symmetric)",
-                        bidiagonalSimilar(4, -3, 2, 1),
-                        new double[]{4, -3, 2, 1}),
-                Arguments.of("4x4 singular with a repeated zero eigenvalue",
-                        bidiagonalSimilar(2, 0, -1, 0),
-                        new double[]{2, -1, 0, 0}),
-                Arguments.of("5x5 mixed signs and repeats",
-                        bidiagonalSimilar(3, -3, 1, 1, -2),
-                        new double[]{3, -3, -2, 1, 1})
+            Arguments.of("1x1",
+                new double[][]{{5}},
+                new double[]{5}),
+            Arguments.of("1x1 zero",
+                new double[][]{{0}},
+                new double[]{0}),
+            Arguments.of("1x1 negative",
+                new double[][]{{-4}},
+                new double[]{-4}),
+            Arguments.of("2x2 diagonal, already in order",
+                new double[][]{{3, 0}, {0, 2}},
+                new double[]{3, 2}),
+            Arguments.of("2x2 diagonal, needs reordering",
+                new double[][]{{1, 0}, {0, 5}},
+                new double[]{5, 1}),
+            Arguments.of("2x2 scalar matrix",
+                new double[][]{{3, 0}, {0, 3}},
+                new double[]{3, 3}),
+            Arguments.of("2x2 non-symmetric",
+                new double[][]{{4, 1}, {2, 3}},
+                new double[]{5, 2}),
+            Arguments.of("2x2 with a negative eigenvalue",
+                new double[][]{{1, 2}, {2, 1}},
+                new double[]{3, -1}),
+            Arguments.of("2x2 swap (eigenvalues of equal magnitude)",
+                new double[][]{{0, 1}, {1, 0}},
+                new double[]{1, -1}),
+            Arguments.of("2x2 row-stochastic",
+                new double[][]{{0.9, 0.1}, {0.5, 0.5}},
+                new double[]{1, 0.4}),
+            Arguments.of("2x2 column-stochastic",
+                new double[][]{{0.9, 0.5}, {0.1, 0.5}},
+                new double[]{1, 0.4}),
+            Arguments.of("3x3 upper triangular",
+                new double[][]{{1, 2, 3}, {0, 4, 5}, {0, 0, 6}},
+                new double[]{6, 4, 1}),
+            Arguments.of("3x3 lower triangular",
+                new double[][]{{2, 0, 0}, {1, 3, 0}, {4, 5, 1}},
+                new double[]{3, 2, 1}),
+            Arguments.of("3x3 symmetric tridiagonal",
+                new double[][]{{2, -1, 0}, {-1, 2, -1}, {0, -1, 2}},
+                new double[]{2 + Math.sqrt(2), 2, 2 - Math.sqrt(2)}),
+            Arguments.of("3x3 identity",
+                new double[][]{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
+                new double[]{1, 1, 1}),
+            Arguments.of("3x3 zero",
+                new double[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+                new double[]{0, 0, 0}),
+            Arguments.of("3x3 repeated eigenvalue (symmetric)",
+                new double[][]{{3, 1, 1}, {1, 3, 1}, {1, 1, 3}},
+                new double[]{5, 2, 2}),
+            Arguments.of("3x3 repeated eigenvalue (non-symmetric)",
+                bidiagonalSimilar(2, 2, 5),
+                new double[]{5, 2, 2}),
+            Arguments.of("3x3 two absorbing states",
+                new double[][]{{1, 0, 0}, {0, 1, 0}, {0.2, 0.3, 0.5}},
+                new double[]{1, 1, 0.5}),
+            Arguments.of("3x3 lazy random walk",
+                new double[][]{{0.5, 0.5, 0}, {0.25, 0.5, 0.25}, {0, 0.5, 0.5}},
+                new double[]{1, 0.5, 0}),
+            Arguments.of("3x3 periodic random walk (eigenvalues 1, 0 and -1)",
+                new double[][]{{0, 1, 0}, {0.5, 0, 0.5}, {0, 1, 0}},
+                new double[]{1, -1, 0}),
+            Arguments.of("4x4 periodic random walk (eigenvalues of both signs)",
+                new double[][]{{0, 1, 0, 0}, {0.5, 0, 0.5, 0}, {0, 0.5, 0, 0.5}, {0, 0, 1, 0}},
+                new double[]{1, -1, 0.5, -0.5}),
+            Arguments.of("4x4 distinct (non-symmetric)",
+                bidiagonalSimilar(4, -3, 2, 1),
+                new double[]{4, -3, 2, 1}),
+            Arguments.of("4x4 singular with a repeated zero eigenvalue",
+                bidiagonalSimilar(2, 0, -1, 0),
+                new double[]{2, -1, 0, 0}),
+            Arguments.of("5x5 mixed signs and repeats",
+                bidiagonalSimilar(3, -3, 1, 1, -2),
+                new double[]{3, -3, -2, 1, 1})
         );
     }
     @ParameterizedTest(name = "eigenvalues: {0}")
     @MethodSource("cases")
     void eigenvaluesMatchExpected(
-            String name,
-            double[][] data,
-            double[] expected
+        String name,
+        double[][] data,
+        double[] expected
     )
-            throws Exception
+        throws Exception
     {
         assertEigenvaluesEqual(expected, diagonalize(data), TOL * scaleOf(data), name);
     }
     @ParameterizedTest(name = "D is diagonal: {0}")
     @MethodSource("cases")
     void diagonalMatrixHasExactlyZeroOffDiagonalEntries(
-            String name,
-            double[][] data,
-            double[] expected
+        String name,
+        double[][] data,
+        double[] expected
     )
-            throws Exception
+        throws Exception
     {
         assertDiagonal(diagonalize(data).D(), name);
     }
     @ParameterizedTest(name = "P D P^-1 = A: {0}")
     @MethodSource("cases")
     void factorizationReproducesTheInput(
-            String name,
-            double[][] data,
-            double[] expected
+        String name,
+        double[][] data,
+        double[] expected
     )
-            throws Exception
+        throws Exception
     {
         Diagonalization d = diagonalize(data);
         double[][] rebuilt = product(product(d.P().data(), d.D().data()), d.inverseP().data());
@@ -151,11 +153,11 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "A P = P D: {0}")
     @MethodSource("cases")
     void everyColumnOfPIsAnEigenvectorForItsEigenvalue(
-            String name,
-            double[][] data,
-            double[] expected
+        String name,
+        double[][] data,
+        double[] expected
     )
-            throws Exception
+        throws Exception
     {
         Diagonalization d = diagonalize(data);
         assertMatrixEquals(product(data, d.P().data()), product(d.P().data(), d.D().data()), TOL * scaleOf(data), name);
@@ -163,11 +165,11 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "inverse works on both sides: {0}")
     @MethodSource("cases")
     void inversePIsATwoSidedInverseOfP(
-            String name,
-            double[][] data,
-            double[] expected
+        String name,
+        double[][] data,
+        double[] expected
     )
-            throws Exception
+        throws Exception
     {
         Diagonalization d = diagonalize(data);
         double[][] identity = identityData(data.length);
@@ -177,22 +179,22 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "unit eigenvectors with a positive largest entry: {0}")
     @MethodSource("cases")
     void eigenvectorsAreUnitLengthWithAPositiveLargestEntry(
-            String name,
-            double[][] data,
-            double[] expected
+        String name,
+        double[][] data,
+        double[] expected
     )
-            throws Exception
+        throws Exception
     {
         assertUnitColumnsWithPositiveLargestEntry(diagonalize(data).P(), name);
     }
     @ParameterizedTest(name = "invariant under scaling the matrix: {0}")
     @MethodSource("cases")
     void scalingTheMatrixScalesTheEigenvaluesAndKeepsTheFactorization(
-            String name,
-            double[][] data,
-            double[] expected
+        String name,
+        double[][] data,
+        double[] expected
     )
-            throws Exception
+        throws Exception
     {
         for (double factor : FACTORS) {
             double[][] scaledData = scaled(data, factor);
@@ -213,26 +215,26 @@ class DiagonalizationLogicTest {
     // name, input
     static Stream<Arguments> defectiveCases() {
         return Stream.of(
-                Arguments.of("2x2 Jordan block", new double[][]{{1, 1}, {0, 1}}),
-                Arguments.of("2x2 lower Jordan block", new double[][]{{1, 0}, {1, 1}}),
-                Arguments.of("2x2 nilpotent", new double[][]{{0, 1}, {0, 0}}),
-                Arguments.of("3x3 Jordan block", new double[][]{{2, 1, 0}, {0, 2, 1}, {0, 0, 2}}),
-                Arguments.of("3x3 nilpotent shift", new double[][]{{0, 1, 0}, {0, 0, 1}, {0, 0, 0}}),
-                Arguments.of("3x3 Jordan block next to a distinct eigenvalue",
-                        new double[][]{{1, 1, 0}, {0, 1, 0}, {0, 0, 2}}),
-                Arguments.of("3x3 eigenvalue with multiplicity 3 but only 2 eigenvectors",
-                        new double[][]{{1, 1, 0}, {0, 1, 0}, {0, 0, 1}}),
-                Arguments.of("4x4 Jordan block next to two distinct eigenvalues",
-                        new double[][]{{2, 1, 0, 0}, {0, 2, 0, 0}, {0, 0, 3, 0}, {0, 0, 0, -1}}),
-                Arguments.of("2x2 Jordan block after a change of basis",
-                        similar(new double[][]{{1, 1}, {1, 2}}, new double[][]{{2, -1}, {-1, 1}}, new double[][]{{3, 1}, {0, 3}}))
+            Arguments.of("2x2 Jordan block", new double[][]{{1, 1}, {0, 1}}),
+            Arguments.of("2x2 lower Jordan block", new double[][]{{1, 0}, {1, 1}}),
+            Arguments.of("2x2 nilpotent", new double[][]{{0, 1}, {0, 0}}),
+            Arguments.of("3x3 Jordan block", new double[][]{{2, 1, 0}, {0, 2, 1}, {0, 0, 2}}),
+            Arguments.of("3x3 nilpotent shift", new double[][]{{0, 1, 0}, {0, 0, 1}, {0, 0, 0}}),
+            Arguments.of("3x3 Jordan block next to a distinct eigenvalue",
+                new double[][]{{1, 1, 0}, {0, 1, 0}, {0, 0, 2}}),
+            Arguments.of("3x3 eigenvalue with multiplicity 3 but only 2 eigenvectors",
+                new double[][]{{1, 1, 0}, {0, 1, 0}, {0, 0, 1}}),
+            Arguments.of("4x4 Jordan block next to two distinct eigenvalues",
+                new double[][]{{2, 1, 0, 0}, {0, 2, 0, 0}, {0, 0, 3, 0}, {0, 0, 0, -1}}),
+            Arguments.of("2x2 Jordan block after a change of basis",
+                similar(new double[][]{{1, 1}, {1, 2}}, new double[][]{{2, -1}, {-1, 1}}, new double[][]{{3, 1}, {0, 3}}))
         );
     }
     @ParameterizedTest(name = "defective: {0}")
     @MethodSource("defectiveCases")
     void defectiveMatricesAreRejected(
-            String name,
-            double[][] data
+        String name,
+        double[][] data
     ) {
         var logic = new DiagonalizationLogic(new Matrix(data));
         assertThrows(DefectiveMatrixException.class, logic::diagonalize, name);
@@ -241,25 +243,25 @@ class DiagonalizationLogicTest {
     // name, input
     static Stream<Arguments> complexCases() {
         return Stream.of(
-                Arguments.of("2x2 rotation by 90 degrees", new double[][]{{0, -1}, {1, 0}}),
-                Arguments.of("2x2 scaled rotation", new double[][]{{1, -2}, {2, 1}}),
-                Arguments.of("3x3 cyclic permutation", new double[][]{{0, 0, 1}, {1, 0, 0}, {0, 1, 0}}),
-                Arguments.of("4x4 cyclic permutation",
-                        new double[][]{{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}}),
-                Arguments.of("3x3 real eigenvalue and a complex pair",
-                        new double[][]{{2, 0, 0}, {0, 0, -1}, {0, 1, 0}}),
-                Arguments.of("5x5 two complex pairs and a real eigenvalue",
-                        new double[][]{{0, -1, 0, 0, 0}, {1, 0, 0, 0, 0}, {0, 0, 1, -3, 0}, {0, 0, 3, 1, 0}, {0, 0, 0, 0, 3}}),
-                Arguments.of("3x3 complex pair after a change of basis",
-                        similar(new double[][]{{1, 1, 0}, {0, 1, 1}, {0, 0, 1}}, new double[][]{{1, -1, 1}, {0, 1, -1}, {0, 0, 1}},
-                                new double[][]{{2, 0, 0}, {0, 1, -2}, {0, 2, 1}}))
+            Arguments.of("2x2 rotation by 90 degrees", new double[][]{{0, -1}, {1, 0}}),
+            Arguments.of("2x2 scaled rotation", new double[][]{{1, -2}, {2, 1}}),
+            Arguments.of("3x3 cyclic permutation", new double[][]{{0, 0, 1}, {1, 0, 0}, {0, 1, 0}}),
+            Arguments.of("4x4 cyclic permutation",
+                new double[][]{{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}}),
+            Arguments.of("3x3 real eigenvalue and a complex pair",
+                new double[][]{{2, 0, 0}, {0, 0, -1}, {0, 1, 0}}),
+            Arguments.of("5x5 two complex pairs and a real eigenvalue",
+                new double[][]{{0, -1, 0, 0, 0}, {1, 0, 0, 0, 0}, {0, 0, 1, -3, 0}, {0, 0, 3, 1, 0}, {0, 0, 0, 0, 3}}),
+            Arguments.of("3x3 complex pair after a change of basis",
+                similar(new double[][]{{1, 1, 0}, {0, 1, 1}, {0, 0, 1}}, new double[][]{{1, -1, 1}, {0, 1, -1}, {0, 0, 1}},
+                    new double[][]{{2, 0, 0}, {0, 1, -2}, {0, 2, 1}}))
         );
     }
     @ParameterizedTest(name = "complex: {0}")
     @MethodSource("complexCases")
     void matricesWithComplexEigenvaluesAreRejected(
-            String name,
-            double[][] data
+        String name,
+        double[][] data
     ) {
         var logic = new DiagonalizationLogic(new Matrix(data));
         assertThrows(ComplexEigenvaluesException.class, logic::diagonalize, name);
@@ -267,25 +269,25 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "rejection survives scaling: {0}")
     @MethodSource("defectiveCases")
     void defectiveMatricesAreRejectedAtEveryScale(
-            String name,
-            double[][] data
+        String name,
+        double[][] data
     ) {
         for (double factor : FACTORS) {
             double[][] scaledData = scaled(data, factor);
             assertThrows(DefectiveMatrixException.class,
-                    () -> diagonalize(scaledData), name + " scaled by " + factor);
+                () -> diagonalize(scaledData), name + " scaled by " + factor);
         }
     }
     @ParameterizedTest(name = "rejection survives scaling: {0}")
     @MethodSource("complexCases")
     void complexMatricesAreRejectedAtEveryScale(
-            String name,
-            double[][] data
+        String name,
+        double[][] data
     ) {
         for (double factor : FACTORS) {
             double[][] scaledData = scaled(data, factor);
             assertThrows(ComplexEigenvaluesException.class,
-                    () -> diagonalize(scaledData), name + " scaled by " + factor);
+                () -> diagonalize(scaledData), name + " scaled by " + factor);
         }
     }
 
@@ -294,9 +296,9 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "zero matrix {0}x{0}")
     @ValueSource(ints = {1, 2, 3, 5, 6})
     void zeroMatricesHaveOnlyZeroEigenvalues(
-            int n
+        int n
     )
-            throws Exception
+        throws Exception
     {
         double[][] data = new double[n][n];
         Diagonalization d = diagonalize(data);
@@ -306,9 +308,9 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "identity {0}x{0}")
     @ValueSource(ints = {1, 2, 3, 5, 6})
     void identityMatricesHaveOnlyEigenvalueOne(
-            int n
+        int n
     )
-            throws Exception
+        throws Exception
     {
         double[][] data = identityData(n);
         Diagonalization d = diagonalize(data);
@@ -320,7 +322,7 @@ class DiagonalizationLogicTest {
     // A diagonal matrix is already diagonalized: P only has to put the eigenvalues in order.
     @Test
     void diagonalMatricesGiveAPermutationOfTheStandardBasis()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(51); // fixed seed keeps failures reproducible
         for (int trial = 0; trial < 200; trial++) {
@@ -360,15 +362,15 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "{0}x{1} is rejected")
     @CsvSource({"1, 2", "2, 1", "2, 3", "3, 2", "1, 5", "5, 1"})
     void constructorRejectsNonSquareMatrices(
-            int rows,
-            int cols
+        int rows,
+        int cols
     ) {
         var matrix = new Matrix(new double[rows][cols]);
-        assertThrows(IllegalArgumentException.class, () -> new DiagonalizationLogic(matrix));
+        assertThrows(IllegalStateException.class, () -> new DiagonalizationLogic(matrix));
     }
     @Test
     void inputIsNeverMutated()
-            throws Exception
+        throws Exception
     {
         double[][] data = {{4, 1, 0}, {2, 3, 1}, {0, 1, 5}};
         var original = new Matrix(data);
@@ -384,7 +386,7 @@ class DiagonalizationLogicTest {
     }
     @Test
     void repeatedCallsGiveIdenticalResults()
-            throws Exception
+        throws Exception
     {
         var logic = new DiagonalizationLogic(new Matrix(new double[][]{{4, 1, 0}, {2, 3, 1}, {0, 1, 5}}));
         Diagonalization first = logic.diagonalize();
@@ -392,32 +394,6 @@ class DiagonalizationLogicTest {
         assertMatrixEquals(first.P().data(), second.P().data(), 0.0, "P");
         assertMatrixEquals(first.D().data(), second.D().data(), 0.0, "D");
         assertMatrixEquals(first.inverseP().data(), second.inverseP().data(), 0.0, "inverse of P");
-    }
-    @Test
-    void returnedMatricesAreIndependentOfTheLogicObject()
-            throws Exception
-    {
-        var logic = new DiagonalizationLogic(new Matrix(new double[][]{{2, 0}, {0, 3}}));
-        Diagonalization first = logic.diagonalize();
-        first.P().data()[0][0] = 99;
-        first.D().data()[0][0] = 99;
-        first.inverseP().data()[0][0] = 99;
-
-        Diagonalization second = logic.diagonalize();
-        assertMatrixEquals(new double[][]{{0, 1}, {1, 0}}, second.P().data(), TOL, "P");
-        assertMatrixEquals(new double[][]{{3, 0}, {0, 2}}, second.D().data(), TOL, "D");
-        assertMatrixEquals(new double[][]{{0, 1}, {1, 0}}, second.inverseP().data(), TOL, "inverse of P");
-    }
-    @Test
-    void returnedMatricesAreIndependentOfTheInput()
-            throws Exception
-    {
-        double[][] data = {{2, 0}, {0, 3}};
-        var original = new Matrix(data);
-        Diagonalization d = new DiagonalizationLogic(original).diagonalize();
-        d.P().data()[0][0] = 99;
-        d.D().data()[1][1] = 99;
-        assertMatrixEquals(new double[][]{{2, 0}, {0, 3}}, original.data(), 0.0, "input");
     }
 
     // ---------- the test helpers themselves ----------
@@ -435,9 +411,9 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "{0} eigenvalues")
     @ValueSource(ints = {1, 2, 3, 6})
     void bidiagonalSimilarityHasTheRequestedSpectrum(
-            int n
+        int n
     )
-            throws Exception
+        throws Exception
     {
         double[] spectrum = new double[n];
         for (int i = 0; i < n; i++) {
@@ -460,7 +436,7 @@ class DiagonalizationLogicTest {
     // A = S L S^-1 with integer S and S^-1, so the eigenvalues of A are exactly the entries of L.
     @Test
     void randomDiagonalizableMatricesGiveTheKnownSpectrumAndAValidFactorization()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(71);
         for (int trial = 0; trial < 400; trial++) {
@@ -493,9 +469,9 @@ class DiagonalizationLogicTest {
             double[][] data = similar(basis[0], basis[1], jordan);
 
             Exception thrown = assertThrows(Exception.class, () -> diagonalize(data),
-                    "Jordan block of size " + blockSize + " in " + Arrays.deepToString(data));
+                "Jordan block of size " + blockSize + " in " + Arrays.deepToString(data));
             assertTrue(thrown instanceof DefectiveMatrixException || thrown instanceof ComplexEigenvaluesException,
-                    "Expected a non-diagonalizable rejection but was: " + thrown);
+                "Expected a non-diagonalizable rejection but was: " + thrown);
         }
     }
     @Test
@@ -518,12 +494,12 @@ class DiagonalizationLogicTest {
             double[][] data = similar(basis[0], basis[1], blocks);
 
             assertThrows(ComplexEigenvaluesException.class, () -> diagonalize(data),
-                    pairs + " complex pair(s) in " + Arrays.deepToString(data));
+                pairs + " complex pair(s) in " + Arrays.deepToString(data));
         }
     }
     @Test
     void eigenvaluesAreOrderedByMagnitudeAndEigenvectorsCarryAPositiveLargestEntry()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(74);
         for (int trial = 0; trial < 300; trial++) {
@@ -549,7 +525,7 @@ class DiagonalizationLogicTest {
     // cannot show this.
     @Test
     void repeatedEigenvaluesSurviveRoundingNoiseInTheInput()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(76);
         for (int trial = 0; trial < 200; trial++) {
@@ -565,7 +541,7 @@ class DiagonalizationLogicTest {
     }
     @Test
     void repeatedEigenvaluesWithRoundingNoiseSurviveAHugeOrTinyScale()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(78);
         for (int trial = 0; trial < 100; trial++) {
@@ -589,9 +565,9 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "{0}x{0} scalar matrix hidden by a basis change")
     @ValueSource(ints = {2, 3, 5, 8, 10})
     void scalarMatricesHiddenByARoundedBasisChangeStillDiagonalize(
-            int n
+        int n
     )
-            throws Exception
+        throws Exception
     {
         Random random = new Random(77 + n);
         for (int trial = 0; trial < 20; trial++) {
@@ -606,7 +582,7 @@ class DiagonalizationLogicTest {
     }
     @Test
     void largerMatricesStillDiagonalize()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(75);
         for (int n : new int[]{10, 12, 15}) {
@@ -628,7 +604,7 @@ class DiagonalizationLogicTest {
 
     @Test
     void randomSymmetricMatricesDiagonalizeWithOrthogonalEigenvectorsForDistinctEigenvalues()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(81);
         for (int trial = 0; trial < 300; trial++) {
@@ -679,7 +655,7 @@ class DiagonalizationLogicTest {
     // running any eigen-code.
     @Test
     void rowStochasticChainsHaveEigenvalueOneFirstAndAnAllEqualRightEigenvector()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(91);
         for (int trial = 0; trial < 200; trial++) {
@@ -712,7 +688,7 @@ class DiagonalizationLogicTest {
     }
     @Test
     void columnStochasticChainsHaveTheStationaryDistributionAsTheirFirstEigenvector()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(92);
         for (int trial = 0; trial < 200; trial++) {
@@ -738,7 +714,7 @@ class DiagonalizationLogicTest {
     // The point of diagonalizing: A^k = P D^k P^-1, checked against k repeated multiplications.
     @Test
     void diagonalizationReproducesMatrixPowersOfAChain()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(93);
         for (int trial = 0; trial < 100; trial++) {
@@ -762,9 +738,9 @@ class DiagonalizationLogicTest {
     @ParameterizedTest(name = "chain with {0} states")
     @ValueSource(ints = {20, 40})
     void largeChainsStillDiagonalize(
-            int n
+        int n
     )
-            throws Exception
+        throws Exception
     {
         Random random = new Random(94 + n);
         double[][] chain = transposed(rowStochastic(randomSymmetricWeights(random, n)));
@@ -777,7 +753,7 @@ class DiagonalizationLogicTest {
 
     @Test
     void aMatrixAndItsTransposeHaveTheSameEigenvalues()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(101);
         for (int trial = 0; trial < 200; trial++) {
@@ -792,7 +768,7 @@ class DiagonalizationLogicTest {
     }
     @Test
     void shiftingTheMatrixByAMultipleOfTheIdentityShiftsTheEigenvalues()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(102);
         for (int trial = 0; trial < 200; trial++) {
@@ -810,12 +786,12 @@ class DiagonalizationLogicTest {
                 shiftedSpectrum[i] = spectrum[i] + shift;
             }
             assertEigenvaluesEqual(ordered(shiftedSpectrum), diagonalize(shifted), LOOSE_TOL * scaleOf(shifted),
-                    "shift " + shift + " of " + Arrays.deepToString(data));
+                "shift " + shift + " of " + Arrays.deepToString(data));
         }
     }
     @Test
     void changingTheBasisDoesNotChangeTheEigenvalues()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(103);
         for (int trial = 0; trial < 200; trial++) {
@@ -827,12 +803,12 @@ class DiagonalizationLogicTest {
             double[][] changed = similar(second[0], second[1], data);
 
             assertEigenvaluesEqual(ordered(spectrum), diagonalize(changed), LOOSE_TOL * scaleOf(changed),
-                    "basis change of " + Arrays.deepToString(data));
+                "basis change of " + Arrays.deepToString(data));
         }
     }
     @Test
     void squaringTheMatrixSquaresTheEigenvalues()
-            throws Exception
+        throws Exception
     {
         Random random = new Random(104);
         for (int trial = 0; trial < 200; trial++) {
@@ -846,27 +822,27 @@ class DiagonalizationLogicTest {
                 squaredSpectrum[i] = spectrum[i] * spectrum[i];
             }
             assertEigenvaluesEqual(ordered(squaredSpectrum), diagonalize(squared), LOOSE_TOL * scaleOf(squared),
-                    "square of " + Arrays.deepToString(data));
+                "square of " + Arrays.deepToString(data));
         }
     }
 
     // ---------- helpers ----------
 
     private static Diagonalization diagonalize(
-            final double[][] data
+        final double[][] data
     )
-            throws ComplexEigenvaluesException,
-            DefectiveMatrixException,
-            DependentEigenvectorsException
+        throws ComplexEigenvaluesException,
+        DefectiveMatrixException,
+        DependentEigenvectorsException
     {
         return new DiagonalizationLogic(new Matrix(data)).diagonalize();
     }
     // Everything a diagonalization of A must satisfy, each checked directly against the input.
     private static void assertFactorization(
-            final String label,
-            final double[][] data,
-            final Diagonalization d,
-            final double tolerance
+        final String label,
+        final double[][] data,
+        final Diagonalization d,
+        final double tolerance
     ) {
         int n = data.length;
         assertEquals(n, d.P().rows(), "rows of P in " + label);
@@ -885,8 +861,8 @@ class DiagonalizationLogicTest {
         assertMatrixEquals(data, product(product(P, d.D().data()), inverse), tolerance * scale, "P D P^-1 = A for " + label);
     }
     private static void assertDiagonal(
-            final Matrix D,
-            final String label
+        final Matrix D,
+        final String label
     ) {
         for (int i = 0; i < D.rows(); i++) {
             for (int j = 0; j < D.cols(); j++) {
@@ -898,8 +874,8 @@ class DiagonalizationLogicTest {
     }
     // Each column has length 1, and its entry of largest magnitude (the first of any near tie) is positive.
     private static void assertUnitColumnsWithPositiveLargestEntry(
-            final Matrix P,
-            final String label
+        final Matrix P,
+        final String label
     ) {
         for (int j = 0; j < P.cols(); j++) {
             double lengthSquared = 0;
@@ -918,7 +894,7 @@ class DiagonalizationLogicTest {
         }
     }
     private static double[] eigenvaluesOf(
-            final Diagonalization d
+        final Diagonalization d
     ) {
         double[] values = new double[d.D().rows()];
         for (int i = 0; i < values.length; i++) {
@@ -927,30 +903,30 @@ class DiagonalizationLogicTest {
         return values;
     }
     private static void assertEigenvaluesEqual(
-            final double[] expected,
-            final Diagonalization actual,
-            final double tolerance,
-            final String label
+        final double[] expected,
+        final Diagonalization actual,
+        final double tolerance,
+        final String label
     ) {
         double[] values = eigenvaluesOf(actual);
         assertEquals(expected.length, values.length, "number of eigenvalues in " + label);
         for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], values[i], tolerance,
-                    "eigenvalue " + i + " of " + label + ": expected " + Arrays.toString(expected) + " but was " + Arrays.toString(values));
+                "eigenvalue " + i + " of " + label + ": expected " + Arrays.toString(expected) + " but was " + Arrays.toString(values));
         }
     }
     // The order the linearAlgebra.logic promises: largest magnitude first, the larger value first when magnitudes tie.
     private static double[] ordered(
-            final double[] eigenvalues
+        final double[] eigenvalues
     ) {
         return Arrays.stream(eigenvalues).boxed()
-                .sorted(Comparator.comparingDouble((Double x) -> Math.abs(x)).thenComparingDouble(x -> x).reversed())
-                .mapToDouble(Double::doubleValue)
-                .toArray();
+            .sorted(Comparator.comparingDouble((Double x) -> Math.abs(x)).thenComparingDouble(x -> x).reversed())
+            .mapToDouble(Double::doubleValue)
+            .toArray();
     }
     // Largest absolute entry (1 for the zero matrix), so that tolerances scale with the matrix being tested.
     private static double scaleOf(
-            final double[][] data
+        final double[][] data
     ) {
         double maxAbs = 0;
         for (double[] row : data) {
@@ -963,9 +939,9 @@ class DiagonalizationLogicTest {
     // A change of basis with integer entries whose inverse is also integer, built by elementary row operations: S gets
     // each operation and S^-1 gets the inverse operation as a column operation. Returns {S, S^-1}.
     private static double[][][] randomBasisChange(
-            final Random random,
-            final int n,
-            final int steps
+        final Random random,
+        final int n,
+        final int steps
     ) {
         double[][] basis = identityData(n);
         double[][] inverse = identityData(n);
@@ -994,36 +970,36 @@ class DiagonalizationLogicTest {
     // S L S^-1 for a random Gaussian S (kept reasonably conditioned) whose inverse comes from MatrixLogic. Unlike the
     // integer basis changes this is not exact, so the result carries rounding noise.
     private static double[][] noisySimilar(
-            final Random random,
-            final double[][] middle
+        final Random random,
+        final double[][] middle
     )
-            throws Exception
+        throws Exception
     {
         int n = middle.length;
-        while (true) {
-            double[][] basis = new double[n][n];
+        double[][] basis;
+        double[][] inverse;
+        do {
+            basis = new double[n][n];
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
                     basis[i][j] = random.nextGaussian();
                 }
             }
-            double[][] inverse = new MatrixLogic(new Matrix(basis)).inverse().data();
-            if (scaleOf(basis) * scaleOf(inverse) < 100) {
-                return similar(basis, inverse, middle);
-            }
-        }
+            inverse = new MatrixLogic(new Matrix(basis)).inverse().data();
+        } while (scaleOf(basis) * scaleOf(inverse) >= 100);
+        return similar(basis, inverse, middle);
     }
     private static double[][] similar(
-            final double[][] basis,
-            final double[][] inverse,
-            final double[][] middle
+        final double[][] basis,
+        final double[][] inverse,
+        final double[][] middle
     ) {
         return product(product(basis, middle), inverse);
     }
     // S L S^-1 with S upper bidiagonal (ones on the diagonal and superdiagonal), whose inverse has entries (-1)^(j - i).
     // The result is an integer matrix with exactly the given eigenvalues and non-orthogonal eigenvectors.
     private static double[][] bidiagonalSimilar(
-            final double... eigenvalues
+        final double... eigenvalues
     ) {
         int n = eigenvalues.length;
         double[][] basis = identityData(n);
@@ -1040,9 +1016,9 @@ class DiagonalizationLogicTest {
     }
     // Integer eigenvalues in [-bound, bound], repeats allowed.
     private static double[] randomSpectrum(
-            final Random random,
-            final int n,
-            final int bound
+        final Random random,
+        final int n,
+        final int bound
     ) {
         double[] spectrum = new double[n];
         for (int i = 0; i < n; i++) {
@@ -1050,25 +1026,10 @@ class DiagonalizationLogicTest {
         }
         return spectrum;
     }
-    // Integer entries in [-bound, bound].
-    private static double[][] randomData(
-            final Random random,
-            final int rows,
-            final int cols,
-            final int bound
-    ) {
-        double[][] data = new double[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                data[i][j] = random.nextInt(2 * bound + 1) - bound;
-            }
-        }
-        return data;
-    }
     // Symmetric positive weights W with integer entries in [1, 9].
     private static double[][] randomSymmetricWeights(
-            final Random random,
-            final int n
+        final Random random,
+        final int n
     ) {
         double[][] weights = new double[n][n];
         for (int i = 0; i < n; i++) {
@@ -1080,7 +1041,7 @@ class DiagonalizationLogicTest {
         return weights;
     }
     private static double[][] rowStochastic(
-            final double[][] weights
+        final double[][] weights
     ) {
         int n = weights.length;
         double[][] chain = new double[n][n];
@@ -1094,7 +1055,7 @@ class DiagonalizationLogicTest {
     }
     // For the chain built from symmetric weights the stationary probability of state-i is its row sum over the total.
     private static double[] stationaryDistribution(
-            final double[][] weights
+        final double[][] weights
     ) {
         int n = weights.length;
         double[] stationary = new double[n];
@@ -1108,19 +1069,8 @@ class DiagonalizationLogicTest {
         }
         return stationary;
     }
-    private static List<Integer> shuffledIndices(
-            final Random random,
-            final int size
-    ) {
-        List<Integer> indices = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            indices.add(i);
-        }
-        Collections.shuffle(indices, random);
-        return indices;
-    }
     private static double[][] diagonalData(
-            final double... diagonal
+        final double... diagonal
     ) {
         double[][] data = new double[diagonal.length][diagonal.length];
         for (int i = 0; i < diagonal.length; i++) {
@@ -1129,14 +1079,14 @@ class DiagonalizationLogicTest {
         return data;
     }
     private static double[][] identityData(
-            final int n
+        final int n
     ) {
         double[] ones = new double[n];
         Arrays.fill(ones, 1);
         return diagonalData(ones);
     }
     private static double[][] transposed(
-            final double[][] data
+        final double[][] data
     ) {
         double[][] result = new double[data[0].length][data.length];
         for (int i = 0; i < data.length; i++) {
@@ -1146,47 +1096,18 @@ class DiagonalizationLogicTest {
         }
         return result;
     }
-    private static double[][] scaled(
-            final double[][] data,
-            final double factor
-    ) {
-        double[][] result = new double[data.length][data[0].length];
-        for (int i = 0; i < data.length; i++) {
-            for (int j = 0; j < data[0].length; j++) {
-                result[i][j] = factor * data[i][j];
-            }
-        }
-        return result;
-    }
-    // Plain triple loop, deliberately independent of MatrixLogic.multiply.
-    private static double[][] product(
-            final double[][] left,
-            final double[][] right
-    ) {
-        double[][] result = new double[left.length][right[0].length];
-        for (int i = 0; i < left.length; i++) {
-            for (int j = 0; j < right[0].length; j++) {
-                double sum = 0;
-                for (int k = 0; k < right.length; k++) {
-                    sum += left[i][k] * right[k][j];
-                }
-                result[i][j] = sum;
-            }
-        }
-        return result;
-    }
     private static void assertMatrixEquals(
-            final double[][] expected,
-            final double[][] actual,
-            final double tolerance,
-            final String label
+        final double[][] expected,
+        final double[][] actual,
+        final double tolerance,
+        final String label
     ) {
         assertEquals(expected.length, actual.length, "row count of " + label);
         assertEquals(expected[0].length, actual[0].length, "column count of " + label);
         for (int i = 0; i < expected.length; i++) {
             for (int j = 0; j < expected[0].length; j++) {
                 assertEquals(expected[i][j], actual[i][j], tolerance,
-                        "mismatch at (" + i + ", " + j + ") of " + label);
+                    "mismatch at (" + i + ", " + j + ") of " + label);
             }
         }
     }

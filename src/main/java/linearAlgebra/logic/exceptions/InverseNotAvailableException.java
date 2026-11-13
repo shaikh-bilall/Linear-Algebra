@@ -1,4 +1,4 @@
-package linearAlgebra.domain.exceptions;
+package linearAlgebra.logic.exceptions;
 
 /**
  * Thrown when an inverse is requested for a matrix that is not square or is singular.

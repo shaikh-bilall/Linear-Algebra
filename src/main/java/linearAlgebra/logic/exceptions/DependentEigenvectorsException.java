@@ -1,4 +1,4 @@
-package linearAlgebra.domain.exceptions;
+package linearAlgebra.logic.exceptions;
 
 /**
  * Thrown when the eigenvectors of a matrix are linearly dependent and therefore cannot form a basis.

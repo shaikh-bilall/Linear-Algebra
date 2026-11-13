@@ -1,4 +1,4 @@
-package linearAlgebra.domain.exceptions;
+package linearAlgebra.logic.exceptions;
 
 /**
  * Thrown when a matrix is defective: an eigenvalue repeats more often than it has independent

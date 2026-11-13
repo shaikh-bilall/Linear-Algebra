@@ -22,41 +22,11 @@ public record Matrix(double[][] data) {
     public Matrix(
         final double[][] data
     ) {
-        Preconditions.checkNotNull(
-            data,
-            "Matrix: data must not be null"
-        );
-        Preconditions.checkArgument(
-            data.length > 0,
-            "Matrix: matrix must have at least one row"
-        );
-        for (double[] row : data) {
-            Preconditions.checkNotNull(
-                row,
-                "Matrix: row must not be null"
-            );
-        }
-        Preconditions.checkArgument(
-            data[0].length > 0,
-            "Matrix: matrix must have at least one column"
-        );
-        for (double[] row : data) {
-            Preconditions.checkArgument(
-                row.length == data[0].length,
-                "Matrix: all rows must have the same number of columns: %s != %s",
-                row.length,
-                data[0].length
-            );
-            Preconditions.checkArgument(
-                Arrays.stream(row).allMatch(Double::isFinite),
-                "Matrix: all entries must be finite numbers"
-            );
-        }
-
         this.data = new double[data.length][];
         for (int i = 0; i < data.length; i++) {
             this.data[i] = data[i].clone();
         }
+
         checkMatrix();
     }
 
@@ -68,6 +38,7 @@ public record Matrix(double[][] data) {
     @Override
     public double[][] data() {
         checkMatrix();
+
         double[][] copy = new double[data.length][];
         for (int i = 0; i < data.length; i++) {
             copy[i] = data[i].clone();
@@ -88,6 +59,7 @@ public record Matrix(double[][] data) {
             "Matrix.identity: dimension must be positive: %s",
             dimension
         );
+
         double[][] identityData = new double[dimension][dimension];
         for (int i = 0; i < dimension; i++) {
             identityData[i][i] = 1;
@@ -101,6 +73,7 @@ public record Matrix(double[][] data) {
      */
     public double maxAbs() {
         checkMatrix();
+
         double maxAbs = 0;
         for (double[] row : data) {
             for (double entry : row) {
@@ -116,6 +89,7 @@ public record Matrix(double[][] data) {
      */
     public Matrix transpose() {
         checkMatrix();
+
         final int rows = data.length;
         final int cols = data[0].length;
         double[][] transposedData = new double[cols][rows];
@@ -230,6 +204,7 @@ public record Matrix(double[][] data) {
             "Matrix.getRow: row index out of bounds: %s",
             rowIndex
         );
+
         return new Vector(data[rowIndex]);
     }
     /**
@@ -257,14 +232,7 @@ public record Matrix(double[][] data) {
             colIndex
         );
 
-        double value = data[rowIndex][colIndex];
-        Preconditions.checkState(
-            Double.isFinite(value),
-            "Matrix.get: entry must be finite: row %s, column %s",
-            rowIndex,
-            colIndex
-        );
-        return value;
+        return data[rowIndex][colIndex];
     }
     /**
      * Returns the number of rows.
@@ -273,6 +241,7 @@ public record Matrix(double[][] data) {
      */
     public int rows() {
         checkMatrix();
+
         return data.length;
     }
     /**
@@ -282,6 +251,7 @@ public record Matrix(double[][] data) {
      */
     public int cols() {
         checkMatrix();
+
         return data[0].length;
     }
     /**
@@ -291,9 +261,9 @@ public record Matrix(double[][] data) {
      */
     public Matrix copy() {
         checkMatrix();
+
         return new Matrix(data);
     }
-
     /**
      * Compares this matrix to another object for equality, entry by entry. Two matrices are equal when they have the
      * same dimensions and every pair of matching entries is numerically equal, so {@code 0.0} and {@code -0.0} count
@@ -307,22 +277,29 @@ public record Matrix(double[][] data) {
         final Object otherObject
     ) {
         checkMatrix();
-        if (this == otherObject) {
-            return true;
-        }
+
+        boolean equals = true;
         if (!(otherObject instanceof Matrix otherMatrix)) {
-            return false;
-        }
-        otherMatrix.checkMatrix();
-        if (data.length != otherMatrix.data.length) {
-            return false;
-        }
-        for (int i = 0; i < data.length; i++) {
-            if (!Vector.entriesEqual(data[i], otherMatrix.data[i])) {
-                return false;
+            equals = false;
+        } else {
+            otherMatrix.checkMatrix();
+            if (
+                data.length != otherMatrix.data.length ||
+                data[0].length != otherMatrix.data[0].length
+            ) {
+                equals = false;
+            }
+            int i = 0;
+            while (equals && i < data.length) {
+                if (data[i].length != otherMatrix.data[i].length) {
+                    equals = false;
+                } else {
+                    equals = Vector.entriesEqual(data[i], otherMatrix.data[i]);
+                }
+                i++;
             }
         }
-        return true;
+        return equals;
     }
     /**
      * Returns a hash code that agrees with {@link #equals}: matrices that are equal have the same hash code.
@@ -332,6 +309,7 @@ public record Matrix(double[][] data) {
     @Override
     public int hashCode() {
         checkMatrix();
+
         int result = 1;
         for (double[] row : data) {
             result = 31 * result + Vector.entriesHashCode(row);
@@ -341,27 +319,34 @@ public record Matrix(double[][] data) {
 
     // Checks the cheap structural invariants: at least one row and column, no null rows, rectangular shape.
     private void checkMatrix() {
-        Preconditions.checkState(
-            data != null,
+        Preconditions.checkNotNull(
+            data,
             "Matrix: data must not be null"
         );
         Preconditions.checkState(
             data.length > 0,
             "Matrix: matrix must have at least one row"
         );
+        Preconditions.checkNotNull(
+            data[0],
+            "Matrix: row must not be null"
+        );
         Preconditions.checkState(
-            data[0] != null &&
-                data[0].length > 0,
+            data[0].length > 0,
             "Matrix: matrix must have at least one column"
         );
         for (double[] row : data) {
-            Preconditions.checkState(
-                row != null,
+            Preconditions.checkNotNull(
+                row,
                 "Matrix: row must not be null"
             );
             Preconditions.checkState(
                 row.length == data[0].length,
                 "Matrix: all rows must have the same number of columns"
+            );
+            Preconditions.checkState(
+                Arrays.stream(row).allMatch(Double::isFinite),
+                "Matrix: all entries must be finite numbers"
             );
         }
     }
