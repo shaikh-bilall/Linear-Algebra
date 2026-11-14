@@ -6,20 +6,20 @@ import linearAlgebra.domain.Matrix;
 import java.util.List;
 
 /**
- * The result of performing {@link OperationRREF}s on  a matrix.
+ * The result after performing {@link RREFOperation}s on  a {@link Matrix}.
  *
  * @param reduced    the reduced row echelon form {@link Matrix}
- * @param operations the {@link OperationRREF}s that turn the original {@link Matrix}
+ * @param operations the {@link RREFOperation}s that turn the original {@link Matrix}
  *                  into {@code reduced}
  */
-public record Reduction(Matrix reduced, List<OperationRREF> operations) {
+public record Reduction(Matrix reduced, List<RREFOperation> operations) {
 
     /**
-     * Creates a reduction from its reduced {@link Matrix} and
-     * the {@link OperationRREF}s that produced it.
+     * Creates a {@code Reduction} object from its reduced {@link Matrix} and
+     * the {@link RREFOperation}s that produced it.
      *
      * @param reduced    the reduced row echelon form {@link Matrix}
-     * @param operations the {@link OperationRREF}s that turn the original {@link Matrix}
+     * @param operations the {@link RREFOperation}s that turn the original {@link Matrix}
      *                   into {@code reduced}, in order
      */
     public Reduction {

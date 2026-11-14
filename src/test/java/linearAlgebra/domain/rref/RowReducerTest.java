@@ -101,7 +101,7 @@ class RowReducerTest {
         assertEquals(1.0, reduction.reduced().get(0, 0), TOL);
         assertEquals(0.0, reduction.reduced().get(1, 0), 0.0);
         assertEquals(1e-12, reduction.reduced().get(1, 1), 1e-13);
-        for (OperationRREF operation : reduction.operations()) {
+        for (RREFOperation operation : reduction.operations()) {
             assertFalse(operation instanceof Type2, "no pivot may be taken from a noise-level entry");
         }
     }
@@ -168,7 +168,7 @@ class RowReducerTest {
         Random random = new Random(203);
         for (int trial = 0; trial < 300; trial++) {
             var matrix = new Matrix(randomData(random, 1 + random.nextInt(5), 1 + random.nextInt(5), 5));
-            for (OperationRREF operation : RowReducer.reduce(matrix).operations()) {
+            for (RREFOperation operation : RowReducer.reduce(matrix).operations()) {
                 operation.apply(matrix);
             }
         }
@@ -193,7 +193,7 @@ class RowReducerTest {
     @Test
     void reductionReportsItsComponents() {
         var matrix = new Matrix(sampleData());
-        List<OperationRREF> operations = List.of(new Type1(0, 1));
+        List<RREFOperation> operations = List.of(new Type1(0, 1));
         var reduction = new Reduction(matrix, operations);
         assertSame(matrix, reduction.reduced());
         assertEquals(operations, reduction.operations());
@@ -201,7 +201,7 @@ class RowReducerTest {
 
     @Test
     void reductionCopiesTheOperationList() {
-        List<OperationRREF> operations = new ArrayList<>(List.of(new Type1(0, 1)));
+        List<RREFOperation> operations = new ArrayList<>(List.of(new Type1(0, 1)));
         var reduction = new Reduction(new Matrix(sampleData()), operations);
         operations.add(new Type2(0, 2));
         assertEquals(List.of(new Type1(0, 1)), reduction.operations());
@@ -210,7 +210,7 @@ class RowReducerTest {
 
     @Test
     void reductionRejectsANullMatrixAndNullOperations() {
-        List<OperationRREF> none = List.of();
+        List<RREFOperation> none = List.of();
         assertThrows(NullPointerException.class, () -> new Reduction(null, none));
         assertThrows(NullPointerException.class,
             () -> new Reduction(new Matrix(sampleData()), null));
@@ -218,7 +218,7 @@ class RowReducerTest {
 
     @Test
     void reductionRejectsAnOperationListWithANullElement() {
-        List<OperationRREF> withNull = Arrays.asList(new Type1(0, 1), null);
+        List<RREFOperation> withNull = Arrays.asList(new Type1(0, 1), null);
         assertThrows(NullPointerException.class,
             () -> new Reduction(new Matrix(sampleData()), withNull));
     }
@@ -228,7 +228,7 @@ class RowReducerTest {
     @Test
     void applyOfEachTypeMatchesTheResultOfTheOperationItself() {
         var matrix = new Matrix(sampleData());
-        for (OperationRREF operation : operations()) {
+        for (RREFOperation operation : operations()) {
             assertMatrixEquals(operation.apply(matrix), RowReducer.apply(operation, matrix), 0.0);
         }
     }
@@ -250,7 +250,7 @@ class RowReducerTest {
     @Test
     void applyToAMatrixLeavesTheOperandUnchangedAndReturnsANewMatrix() {
         var matrix = new Matrix(sampleData());
-        for (OperationRREF operation : operations()) {
+        for (RREFOperation operation : operations()) {
             Matrix result = RowReducer.apply(operation, matrix);
             assertNotSame(matrix, result);
             assertMatrixEquals(sampleData(), matrix, 0.0);
@@ -306,7 +306,7 @@ class RowReducerTest {
     @Test
     void applyToAVectorMatchesTheResultOfTheOperationItself() {
         var v = vector(1, 2, 3);
-        for (OperationRREF operation : operations()) {
+        for (RREFOperation operation : operations()) {
             assertVectorEquals(operation.apply(v).data(), RowReducer.apply(operation, v));
         }
     }
@@ -314,7 +314,7 @@ class RowReducerTest {
     @Test
     void applyToAVectorLeavesTheOperandUnchangedAndReturnsANewVector() {
         var v = vector(1, 2, 3);
-        for (OperationRREF operation : operations()) {
+        for (RREFOperation operation : operations()) {
             Vector result = RowReducer.apply(operation, v);
             assertNotSame(v, result);
             assertVectorEquals(new double[]{1, 2, 3}, v);
@@ -362,9 +362,9 @@ class RowReducerTest {
     @Test
     void applyAllToAMatrixAppliesTheOperationsInOrder() {
         var matrix = new Matrix(sampleData());
-        List<OperationRREF> operations = List.of(new Type1(0, 2), new Type2(1, 2), new Type3(0, 1, -1));
+        List<RREFOperation> operations = List.of(new Type1(0, 2), new Type2(1, 2), new Type3(0, 1, -1));
         Matrix expected = matrix;
-        for (OperationRREF operation : operations) {
+        for (RREFOperation operation : operations) {
             expected = operation.apply(expected);
         }
         assertMatrixEquals(expected, RowReducer.applyAll(operations, matrix), 0.0);
@@ -396,7 +396,7 @@ class RowReducerTest {
     @Test
     void applyAllToAMatrixRejectsNullArguments() {
         var matrix = new Matrix(sampleData());
-        List<OperationRREF> operations = List.of(new Type1(0, 1));
+        List<RREFOperation> operations = List.of(new Type1(0, 1));
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(null, matrix));
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(operations, (Matrix) null));
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(List.of(), (Matrix) null));
@@ -405,14 +405,14 @@ class RowReducerTest {
     @Test
     void applyAllToAMatrixRejectsAListWithANullOperation() {
         var matrix = new Matrix(sampleData());
-        List<OperationRREF> withNull = Arrays.asList(new Type1(0, 1), null);
+        List<RREFOperation> withNull = Arrays.asList(new Type1(0, 1), null);
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(withNull, matrix));
     }
 
     @Test
     void applyAllToAMatrixRejectsAnOperationThatDoesNotFit() {
         var matrix = new Matrix(sampleData());
-        List<OperationRREF> operations = List.of(new Type1(0, 1), new Type2(3, 2));
+        List<RREFOperation> operations = List.of(new Type1(0, 1), new Type2(3, 2));
         assertThrows(IllegalArgumentException.class, () -> RowReducer.applyAll(operations, matrix));
         assertMatrixEquals(sampleData(), matrix, 0.0);
     }
@@ -420,14 +420,14 @@ class RowReducerTest {
     @Test
     void applyAllToAMatrixRejectsAResultThatOverflowsPartWayThrough() {
         var big = new Matrix(new double[][]{{1e308}, {1}});
-        List<OperationRREF> operations = List.of(new Type1(0, 1), new Type3(1, 0, 10));
+        List<RREFOperation> operations = List.of(new Type1(0, 1), new Type3(1, 0, 10));
         assertThrows(IllegalStateException.class, () -> RowReducer.applyAll(operations, big));
     }
 
     @Test
     void applyAllToAMatrixRejectsAnUnsupportedOperation() {
         var matrix = new Matrix(sampleData());
-        List<OperationRREF> operations = List.of(unsupportedOperation());
+        List<RREFOperation> operations = List.of(unsupportedOperation());
         assertThrows(
             NonExistentRREFOperationException.class,
             () -> RowReducer.applyAll(operations, matrix)
@@ -439,9 +439,9 @@ class RowReducerTest {
     @Test
     void applyAllToAVectorAppliesTheOperationsInOrder() {
         var v = vector(1, 2, 3);
-        List<OperationRREF> operations = List.of(new Type1(0, 2), new Type2(1, 2), new Type3(0, 1, -1));
+        List<RREFOperation> operations = List.of(new Type1(0, 2), new Type2(1, 2), new Type3(0, 1, -1));
         Vector expected = v;
-        for (OperationRREF operation : operations) {
+        for (RREFOperation operation : operations) {
             expected = operation.apply(expected);
         }
         assertVectorEquals(expected.data(), RowReducer.applyAll(operations, v));
@@ -464,7 +464,7 @@ class RowReducerTest {
     @Test
     void applyAllToAVectorRejectsNullArguments() {
         var v = vector(1, 2, 3);
-        List<OperationRREF> operations = List.of(new Type1(0, 1));
+        List<RREFOperation> operations = List.of(new Type1(0, 1));
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(null, v));
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(operations, (Vector) null));
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(List.of(), (Vector) null));
@@ -473,14 +473,14 @@ class RowReducerTest {
     @Test
     void applyAllToAVectorRejectsAListWithANullOperation() {
         var v = vector(1, 2, 3);
-        List<OperationRREF> withNull = Arrays.asList(new Type1(0, 1), null);
+        List<RREFOperation> withNull = Arrays.asList(new Type1(0, 1), null);
         assertThrows(NullPointerException.class, () -> RowReducer.applyAll(withNull, v));
     }
 
     @Test
     void applyAllToAVectorRejectsAnOperationThatDoesNotFit() {
         var v = vector(1, 2, 3);
-        List<OperationRREF> operations = List.of(new Type1(0, 1), new Type3(0, 3, 2));
+        List<RREFOperation> operations = List.of(new Type1(0, 1), new Type3(0, 3, 2));
         assertThrows(IllegalArgumentException.class, () -> RowReducer.applyAll(operations, v));
         assertVectorEquals(new double[]{1, 2, 3}, v);
     }
@@ -488,14 +488,14 @@ class RowReducerTest {
     @Test
     void applyAllToAVectorRejectsAResultThatOverflowsPartWayThrough() {
         var big = vector(1e308, 1);
-        List<OperationRREF> operations = List.of(new Type1(0, 1), new Type3(1, 0, 10));
+        List<RREFOperation> operations = List.of(new Type1(0, 1), new Type3(1, 0, 10));
         assertThrows(IllegalStateException.class, () -> RowReducer.applyAll(operations, big));
     }
 
     @Test
     void applyAllToAVectorRejectsAnUnsupportedOperation() {
         var v = vector(1, 2, 3);
-        List<OperationRREF> operations = List.of(unsupportedOperation());
+        List<RREFOperation> operations = List.of(unsupportedOperation());
         assertThrows(
             NonExistentRREFOperationException.class,
             () -> RowReducer.applyAll(operations, v)
@@ -533,7 +533,7 @@ class RowReducerTest {
         Random random = new Random(205);
         for (int trial = 0; trial < 100; trial++) {
             int n = 2 + random.nextInt(4);
-            List<OperationRREF> operations = new ArrayList<>();
+            List<RREFOperation> operations = new ArrayList<>();
             List<Integer> picks = shuffledIndices(random, n);
             operations.add(new Type1(picks.get(0), picks.get(1)));
             operations.add(new Type2(picks.get(1), randomScalar(random)));
@@ -554,13 +554,13 @@ class RowReducerTest {
     // ---------- helpers ----------
 
     // One operation of each type, all valid for a matrix with three rows and a vector with three entries.
-    private static List<OperationRREF> operations() {
+    private static List<RREFOperation> operations() {
         return List.of(new Type1(0, 2), new Type2(1, 3), new Type3(0, 2, -2));
     }
 
     // An operation the reducer does not know how to perform.
-    private static OperationRREF unsupportedOperation() {
-        return new OperationRREF() {
+    private static RREFOperation unsupportedOperation() {
+        return new RREFOperation() {
             @Override
             public Matrix apply(
                 final Matrix A

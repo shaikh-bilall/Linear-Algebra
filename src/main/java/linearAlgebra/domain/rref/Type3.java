@@ -12,7 +12,7 @@ import linearAlgebra.domain.Vector;
  * @param targetRow the zero-based index of the row that receives the multiple
  * @param scalar    the multiple, which must be nonzero and finite
  */
-public record Type3(int sourceRow, int targetRow, double scalar) implements OperationRREF {
+public record Type3(int sourceRow, int targetRow, double scalar) implements RREFOperation {
 
     /**
      * Creates the operation.

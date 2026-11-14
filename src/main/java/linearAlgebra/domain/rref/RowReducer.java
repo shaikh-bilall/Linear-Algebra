@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * It finds the reduced row echelon form ({@code RREF}) of a {@link Matrix}
- * together with the operations that lead to it, and applies operations
+ * together with the {@link RREFOperation}s that lead to it, and applies {@link RREFOperation}s
  * to {@link Matrix} and {@link Vector} objects.
  */
 public final class RowReducer {
@@ -20,11 +20,14 @@ public final class RowReducer {
     // anything at or below this value counts as zero.
     private static final double RELATIVE_TOLERANCE = 1e-10;
 
+    private RowReducer() {
+    }
+
     /**
      * Reduces a {@link Matrix} to reduced row echelon form.
      *
      * @param A the {@link Matrix} to reduce
-     * @return the reduced {@link Matrix} and the {@link OperationRREF}s that produced it
+     * @return the reduced {@link Matrix} and the {@link RREFOperation}s that produced it
      */
     public static Reduction reduce(
         final Matrix A
@@ -34,7 +37,7 @@ public final class RowReducer {
             "RowReducer.reduce: matrix must not be null"
         );
 
-        final List<OperationRREF> operations = new ArrayList<>();
+        final List<RREFOperation> operations = new ArrayList<>();
         final double[][] working = A.data();
         final double tolerance = RELATIVE_TOLERANCE * A.maxAbs();
         final int rows = working.length;
@@ -70,17 +73,17 @@ public final class RowReducer {
     }
 
     /**
-     * Applies one {@link OperationRREF} to the rows of a {@link Matrix}.
+     * Applies one {@link RREFOperation} to the rows of a {@link Matrix}.
      *
-     * @param operation the {@link OperationRREF} to apply
+     * @param operation the {@link RREFOperation} to apply
      * @param A         the {@link Matrix} to operate on
-     * @return a new {@link Matrix} with the {@link OperationRREF} applied;
+     * @return a {@link Matrix} with the {@link RREFOperation} applied;
      *         {@code A} is unchanged
      * @throws NonExistentRREFOperationException if {@code operation} is not a supported
      *         elementary row operation
      */
     public static Matrix apply(
-        final OperationRREF operation,
+        final RREFOperation operation,
         final Matrix A
     )
         throws NonExistentRREFOperationException
@@ -100,17 +103,17 @@ public final class RowReducer {
     }
 
     /**
-     * Applies one {@link OperationRREF} to the entries of a {@link Vector}.
+     * Applies one {@link RREFOperation} to the entries of a {@link Vector}.
      *
-     * @param operation the {@link OperationRREF} to apply
+     * @param operation the {@link RREFOperation} to apply
      * @param v         the {@link Vector} to operate on
-     * @return a new {@link Vector} with the {@link OperationRREF} applied;
+     * @return a {@link Vector} with the {@link RREFOperation} applied;
      *         {@code v} is unchanged
      * @throws NonExistentRREFOperationException if {@code operation} is not a supported
      *         elementary row operation
      */
     public static Vector apply(
-        final OperationRREF operation,
+        final RREFOperation operation,
         final Vector v
     )
         throws NonExistentRREFOperationException
@@ -130,18 +133,18 @@ public final class RowReducer {
     }
 
     /**
-     * Applies a sequence of {@link OperationRREF}s, in order,
+     * Applies a sequence of {@link RREFOperation}s, in order,
      * to the rows of a {@link Matrix}.
      *
      * @param operations the operations to apply
      * @param A          the {@link Matrix} to operate on
-     * @return a new {@link Matrix} after all {@link OperationRREF}s are applied;
+     * @return a {@link Matrix} after all {@link RREFOperation}s are applied;
      *         a matrix equal to {@code A} when the sequence is empty
      * @throws NonExistentRREFOperationException if an operation is not a supported
      *         elementary row operation
      */
     public static Matrix applyAll(
-        final List<OperationRREF> operations,
+        final List<RREFOperation> operations,
         final Matrix A
     )
         throws NonExistentRREFOperationException
@@ -161,18 +164,18 @@ public final class RowReducer {
     }
 
     /**
-     * Applies a sequence of {@link OperationRREF}s, in order,
+     * Applies a sequence of {@link RREFOperation}s, in order,
      * to the entries of a {@link Vector}.
      *
-     * @param operations the {@link OperationRREF} to apply
+     * @param operations the {@link RREFOperation} to apply
      * @param v          the {@link Vector} to operate on
-     * @return a new {@link Vector} after all {@link OperationRREF}s are applied;
+     * @return a {@link Vector} after all {@link RREFOperation}s are applied;
      *         a vector equal to {@code v} when the sequence is empty
      * @throws NonExistentRREFOperationException if an operation is not a supported
      *         elementary row operation
      */
     public static Vector applyAll(
-        final List<OperationRREF> operations,
+        final List<RREFOperation> operations,
         final Vector v
     )
         throws NonExistentRREFOperationException
@@ -193,19 +196,17 @@ public final class RowReducer {
 
     // Applies a sequence of elementary row-operations, in order, to a working array.
     private static double[][] applyAll(
-        final List<OperationRREF> operations,
+        final List<RREFOperation> operations,
         final double[][] data
     )
         throws NonExistentRREFOperationException
     {
-        if (!operations.isEmpty()) {
-            for (var operation : operations) {
-                Preconditions.checkNotNull(
-                    operation,
-                    "RowReducer.applyAll: operations must not be null"
-                );
-                applyInPlace(data, operation);
-            }
+        for (var operation : operations) {
+            Preconditions.checkNotNull(
+                operation,
+                "RowReducer.applyAll: operations must not be null"
+            );
+            applyInPlace(data, operation);
         }
         return data;
     }
@@ -213,7 +214,7 @@ public final class RowReducer {
     // Holds the only copy of the elementary row-operation arithmetic on a private working array.
     private static void applyInPlace(
         final double[][] data,
-        final OperationRREF operation
+        final RREFOperation operation
     )
         throws NonExistentRREFOperationException
     {
@@ -274,8 +275,8 @@ public final class RowReducer {
     // Applies an operation to the working array and records it for replay.
     private static void applyAndRecord(
         final double[][] working,
-        final List<OperationRREF> operations,
-        final OperationRREF operation
+        final List<RREFOperation> operations,
+        final RREFOperation operation
     )
         throws NonExistentRREFOperationException
     {
@@ -306,7 +307,7 @@ public final class RowReducer {
     // Clears every other entry in the pivot column.
     private static void eliminateColumn(
         final double[][] working,
-        final List<OperationRREF> operations,
+        final List<RREFOperation> operations,
         final int pivotRow,
         final int pivotCol,
         final double tolerance

@@ -23,7 +23,7 @@ The project is organized as a library: data types live in `domain`, the algorith
 | `Matrix` | A rectangular matrix of finite real numbers (at least 1x1). |
 | `Vector` | A vector of finite real numbers. It can be created from an array or as a zero vector of a given size. |
 | `Diagonalization` | The result of diagonalizing `A`: the matrices `P`, `D` and `P^-1` in `A = P D P^-1`. |
-| `OperationRREF`, `Type1`, `Type2`, `Type3` | The elementary row operations as objects: swap two rows (`Type1`), multiply a row by a nonzero scalar (`Type2`), and add a multiple of one row to another (`Type3`). Each can be applied to a matrix or, entry by entry, to a vector. |
+| `RREFOperation`, `Type1`, `Type2`, `Type3` | The elementary row operations as objects: swap two rows (`Type1`), multiply a row by a nonzero scalar (`Type2`), and add a multiple of one row to another (`Type3`). Each can be applied to a matrix or, entry by entry, to a vector. |
 
 `Matrix` and `Vector` reject empty shapes, ragged rows and non-finite entries (`NaN`, infinities), and their operations reject results that overflow.
 

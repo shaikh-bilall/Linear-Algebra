@@ -11,7 +11,7 @@ import linearAlgebra.domain.Vector;
  * @param sourceRow the zero-based index of one of the rows
  * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
  */
-public record Type1(int sourceRow, int targetRow) implements OperationRREF {
+public record Type1(int sourceRow, int targetRow) implements RREFOperation {
 
     /**
      * Creates the operation.

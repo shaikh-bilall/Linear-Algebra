@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class OperationRREFTest {
+class RREFOperationTest {
 
     private static final double TOL = 1e-12;
 
@@ -124,7 +124,7 @@ class OperationRREFTest {
 
     @Test
     void everyOperationLeavesItsOperandUnchangedAndReturnsANewObject() {
-        for (OperationRREF operation : operations()) {
+        for (RREFOperation operation : operations()) {
             var matrix = new Matrix(sampleData());
             Matrix changedMatrix = operation.apply(matrix);
             assertNotSame(matrix, changedMatrix);
@@ -139,7 +139,7 @@ class OperationRREFTest {
 
     @Test
     void everyOperationRejectsANullOperand() {
-        for (OperationRREF operation : operations()) {
+        for (RREFOperation operation : operations()) {
             assertThrows(NullPointerException.class, () -> operation.apply((Matrix) null));
             assertThrows(NullPointerException.class, () -> operation.apply((Vector) null));
         }
@@ -514,7 +514,7 @@ class OperationRREFTest {
         for (int trial = 0; trial < 200; trial++) {
             int size = 2 + random.nextInt(5);
             double[] entries = randomEntries(random, size);
-            OperationRREF operation = randomOperation(random, size);
+            RREFOperation operation = randomOperation(random, size);
 
             Vector changed = operation.apply(new Vector(entries));
             assertVectorEquals(entries, inverseOf(operation).apply(changed));
@@ -524,13 +524,13 @@ class OperationRREFTest {
     // ---------- helpers ----------
 
     // One operation of each type, all valid for a matrix with three rows and a vector with three entries.
-    private static List<OperationRREF> operations() {
+    private static List<RREFOperation> operations() {
         return List.of(new Type1(0, 2), new Type2(1, 3), new Type3(0, 2, -2));
     }
 
     // Asserts that both a three-row matrix and a three-entry vector reject the operation and stay unchanged.
     private static void assertDoesNotFitThreeRows(
-        final OperationRREF operation
+        final RREFOperation operation
     ) {
         var matrix = new Matrix(sampleData());
         var v = vector(1, 2, 3);
@@ -540,7 +540,7 @@ class OperationRREFTest {
         assertVectorEquals(new double[]{1, 2, 3}, v);
     }
 
-    private static OperationRREF randomOperation(
+    private static RREFOperation randomOperation(
         final Random random,
         final int n
     ) {
@@ -554,8 +554,8 @@ class OperationRREFTest {
         };
     }
 
-    private static OperationRREF inverseOf(
-        final OperationRREF operation
+    private static RREFOperation inverseOf(
+        final RREFOperation operation
     ) {
         if (operation instanceof Type1 swap) {
             return swap; // a swap is its own inverse

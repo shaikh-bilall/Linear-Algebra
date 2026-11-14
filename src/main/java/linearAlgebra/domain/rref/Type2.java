@@ -11,7 +11,7 @@ import linearAlgebra.domain.Vector;
  * @param targetRow the zero-based index of the row to scale
  * @param scalar    the factor, which must be nonzero and finite
  */
-public record Type2(int targetRow, double scalar) implements OperationRREF {
+public record Type2(int targetRow, double scalar) implements RREFOperation {
 
     /**
      * Creates the operation.

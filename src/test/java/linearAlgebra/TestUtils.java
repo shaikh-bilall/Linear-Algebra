@@ -19,6 +19,9 @@ public final class TestUtils {
     private static final double DEFAULT_TOLERANCE = 1e-12;
     private static final double[] SCALARS = {-3, -2, -1, -0.5, 0.5, 1, 2, 3};
 
+    private TestUtils() {
+    }
+
     // ---------- random data ----------
 
     // A nonzero scalar, so that every elementary operation built from it is valid.

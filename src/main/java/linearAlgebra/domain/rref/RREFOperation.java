@@ -7,7 +7,7 @@ import linearAlgebra.domain.Vector;
  * An elementary row operation. It acts on the rows of a {@link Matrix} and, in the same way, on the entries of a
  * {@link Vector}, so a sequence of operations can transform a {@link Matrix} and a {@link Vector} consistently.
  */
-public interface OperationRREF {
+public interface RREFOperation {
     /**
      * Applies the operation to the rows of a {@link Matrix}. The {@link Matrix} itself is unchanged.
      *
