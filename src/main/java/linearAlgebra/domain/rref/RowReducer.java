@@ -4,54 +4,27 @@ import com.google.common.base.Preconditions;
 
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
+import linearAlgebra.domain.exceptions.NonExistentRREFOperationException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Row reduction and elementary row operations. It finds the reduced row echelon form of a matrix
- * together with the operations that lead to it, and applies operations, singly or as a recorded
- * sequence, to matrices and vectors. Operands are never modified.
+ * It finds the reduced row echelon form ({@code RREF}) of a {@link Matrix}
+ * together with the operations that lead to it, and applies operations
+ * to {@link Matrix} and {@link Vector} objects.
  */
 public final class RowReducer {
 
-    // Relative to the largest absolute entry of the input; anything at or below this value counts as zero.
+    // Relative to the largest absolute entry of the input;
+    // anything at or below this value counts as zero.
     private static final double RELATIVE_TOLERANCE = 1e-10;
 
     /**
-     * The result of row reducing a matrix.
+     * Reduces a {@link Matrix} to reduced row echelon form.
      *
-     * @param reduced    the reduced row echelon form
-     * @param operations the elementary operations that turn the original matrix into {@code reduced}, in order
-     */
-    public record Reduction(Matrix reduced, List<OperationRREF> operations) {
-
-        /**
-         * Creates a reduction from its reduced matrix and the operations that produced it.
-         *
-         * @param reduced    the reduced row echelon form
-         * @param operations the elementary operations that turn the original matrix into
-         *                   {@code reduced}, in order
-         */
-        public Reduction {
-            Preconditions.checkNotNull(
-                reduced,
-                "Reduction: reduced matrix must not be null"
-            );
-            operations = List.copyOf(operations);
-        }
-    }
-
-    // Prevents instantiation.
-    private RowReducer() {
-    }
-
-    /**
-     * Reduces a matrix to reduced row echelon form.
-     *
-     * @param A the matrix to reduce
-     * @return the reduced matrix and the operations that produced it; the reduced matrix is {@code A} itself when no
-     *         operation was needed
+     * @param A the {@link Matrix} to reduce
+     * @return the reduced {@link Matrix} and the {@link OperationRREF}s that produced it
      */
     public static Reduction reduce(
         final Matrix A
@@ -68,38 +41,50 @@ public final class RowReducer {
         final int cols = working[0].length;
 
         int pivotRow = 0;
-        for (int pivotCol = 0; pivotCol < cols && pivotRow < rows; pivotCol++) {
+        int pivotCol = 0;
+
+        while (pivotRow < rows && pivotCol < cols) {
             final int bestRow = findPivotRow(working, pivotRow, pivotCol, tolerance);
-            if (bestRow == -1) {
-                continue; // no usable pivot in this column: move right, stay on the same row
-            }
+            if (bestRow != -1) {
+                if (bestRow != pivotRow) {
+                    applyAndRecord(working, operations, new Type1(pivotRow, bestRow));
+                }
 
-            if (bestRow != pivotRow) {
-                applyAndRecord(working, operations, new Type1(pivotRow, bestRow));
-            }
+                final double pivot = working[pivotRow][pivotCol];
+                if (pivot != 1.0) {
+                    applyAndRecord(working, operations, new Type2(pivotRow, 1.0 / pivot));
+                }
 
-            final double pivot = working[pivotRow][pivotCol];
-            if (pivot != 1.0) {
-                applyAndRecord(working, operations, new Type2(pivotRow, 1.0 / pivot));
-            }
-
-            eliminateColumn(working, operations, pivotRow, pivotCol, tolerance);
-            pivotRow++;
+                eliminateColumn(working, operations, pivotRow, pivotCol, tolerance);
+                pivotRow++;
+            } // otherwise, no usable pivot in this column: move right, stay on the same row
+            pivotCol++;
         }
 
-        return new Reduction(operations.isEmpty() ? A : new Matrix(working), operations);
+        var reduced = A;
+        if (!operations.isEmpty()) {
+            reduced = new Matrix(working);
+        }
+
+        return new Reduction(reduced, operations);
     }
+
     /**
-     * Applies one elementary operation to the rows of a matrix.
+     * Applies one {@link OperationRREF} to the rows of a {@link Matrix}.
      *
-     * @param operation the operation to apply
-     * @param A         the matrix to operate on
-     * @return a new matrix with the operation applied; {@code A} is unchanged
+     * @param operation the {@link OperationRREF} to apply
+     * @param A         the {@link Matrix} to operate on
+     * @return a new {@link Matrix} with the {@link OperationRREF} applied;
+     *         {@code A} is unchanged
+     * @throws NonExistentRREFOperationException if {@code operation} is not a supported
+     *         elementary row operation
      */
     public static Matrix apply(
         final OperationRREF operation,
         final Matrix A
-    ) {
+    )
+        throws NonExistentRREFOperationException
+    {
         Preconditions.checkNotNull(
             operation,
             "RowReducer.apply: operation must not be null"
@@ -113,17 +98,23 @@ public final class RowReducer {
         applyInPlace(data, operation);
         return new Matrix(data);
     }
+
     /**
-     * Applies one elementary operation to the entries of a vector.
+     * Applies one {@link OperationRREF} to the entries of a {@link Vector}.
      *
-     * @param operation the operation to apply
-     * @param v         the vector to operate on
-     * @return a new vector with the operation applied; {@code v} is unchanged
+     * @param operation the {@link OperationRREF} to apply
+     * @param v         the {@link Vector} to operate on
+     * @return a new {@link Vector} with the {@link OperationRREF} applied;
+     *         {@code v} is unchanged
+     * @throws NonExistentRREFOperationException if {@code operation} is not a supported
+     *         elementary row operation
      */
     public static Vector apply(
         final OperationRREF operation,
         final Vector v
-    ) {
+    )
+        throws NonExistentRREFOperationException
+    {
         Preconditions.checkNotNull(
             operation,
             "RowReducer.apply: operation must not be null"
@@ -137,17 +128,24 @@ public final class RowReducer {
         applyInPlace(column, operation);
         return fromColumn(column);
     }
+
     /**
-     * Applies a sequence of elementary operations, in order, to the rows of a matrix.
+     * Applies a sequence of {@link OperationRREF}s, in order,
+     * to the rows of a {@link Matrix}.
      *
      * @param operations the operations to apply
-     * @param A          the matrix to operate on
-     * @return a new matrix with every operation applied; {@code A} itself when the sequence is empty
+     * @param A          the {@link Matrix} to operate on
+     * @return a new {@link Matrix} after all {@link OperationRREF}s are applied;
+     *         a matrix equal to {@code A} when the sequence is empty
+     * @throws NonExistentRREFOperationException if an operation is not a supported
+     *         elementary row operation
      */
     public static Matrix applyAll(
         final List<OperationRREF> operations,
         final Matrix A
-    ) {
+    )
+        throws NonExistentRREFOperationException
+    {
         Preconditions.checkNotNull(
             operations,
             "RowReducer.applyAll: operations must not be null"
@@ -156,31 +154,29 @@ public final class RowReducer {
             A,
             "RowReducer.applyAll: matrix must not be null"
         );
-        if (operations.isEmpty()) {
-            return A;
-        }
 
-        final double[][] data = A.data();
-        for (var operation : operations) {
-            Preconditions.checkNotNull(
-                operation,
-                "RowReducer.applyAll: operations must not contain null"
-            );
-            applyInPlace(data, operation);
-        }
-        return new Matrix(data);
+        return new Matrix(
+            applyAll(operations, A.data())
+        );
     }
+
     /**
-     * Applies a sequence of elementary operations, in order, to the entries of a vector.
+     * Applies a sequence of {@link OperationRREF}s, in order,
+     * to the entries of a {@link Vector}.
      *
-     * @param operations the operations to apply
-     * @param v          the vector to operate on
-     * @return a new vector with every operation applied; {@code v} itself when the sequence is empty
+     * @param operations the {@link OperationRREF} to apply
+     * @param v          the {@link Vector} to operate on
+     * @return a new {@link Vector} after all {@link OperationRREF}s are applied;
+     *         a vector equal to {@code v} when the sequence is empty
+     * @throws NonExistentRREFOperationException if an operation is not a supported
+     *         elementary row operation
      */
     public static Vector applyAll(
         final List<OperationRREF> operations,
         final Vector v
-    ) {
+    )
+        throws NonExistentRREFOperationException
+    {
         Preconditions.checkNotNull(
             operations,
             "RowReducer.applyAll: operations must not be null"
@@ -189,26 +185,38 @@ public final class RowReducer {
             v,
             "RowReducer.applyAll: vector must not be null"
         );
-        if (operations.isEmpty()) {
-            return v;
-        }
 
-        final double[][] column = toColumn(v);
-        for (var operation : operations) {
-            Preconditions.checkNotNull(
-                operation,
-                "RowReducer.applyAll: operations must not contain null"
-            );
-            applyInPlace(column, operation);
+        return fromColumn(
+            applyAll(operations, toColumn(v))
+        );
+    }
+
+    // Applies a sequence of elementary row-operations, in order, to a working array.
+    private static double[][] applyAll(
+        final List<OperationRREF> operations,
+        final double[][] data
+    )
+        throws NonExistentRREFOperationException
+    {
+        if (!operations.isEmpty()) {
+            for (var operation : operations) {
+                Preconditions.checkNotNull(
+                    operation,
+                    "RowReducer.applyAll: operations must not be null"
+                );
+                applyInPlace(data, operation);
+            }
         }
-        return fromColumn(column);
+        return data;
     }
 
     // Holds the only copy of the elementary row-operation arithmetic on a private working array.
     private static void applyInPlace(
         final double[][] data,
         final OperationRREF operation
-    ) {
+    )
+        throws NonExistentRREFOperationException
+    {
         switch (operation) {
             case Type1 swap -> {
                 checkRowFits(data.length, swap.sourceRow());
@@ -245,9 +253,10 @@ public final class RowReducer {
                     );
                 }
             }
-            default -> throw new IllegalStateException("RowReducer: unsupported elementary operation");
+            default -> throw new NonExistentRREFOperationException();
         }
     }
+
     // Checks that a row index exists in an operand with the given number of rows.
     private static void checkRowFits(
         final int rows,
@@ -261,16 +270,21 @@ public final class RowReducer {
             row
         );
     }
+
     // Applies an operation to the working array and records it for replay.
     private static void applyAndRecord(
         final double[][] working,
         final List<OperationRREF> operations,
         final OperationRREF operation
-    ) {
+    )
+        throws NonExistentRREFOperationException
+    {
         applyInPlace(working, operation);
         operations.add(operation);
     }
-    // Returns the largest-magnitude row at or below startRow in a column, or -1 if none is significant.
+
+    // Returns the largest-magnitude row at or below startRow
+    // in a column, or -1 if none is significant.
     private static int findPivotRow(
         final double[][] data,
         final int startRow,
@@ -288,6 +302,7 @@ public final class RowReducer {
         }
         return bestRow;
     }
+
     // Clears every other entry in the pivot column.
     private static void eliminateColumn(
         final double[][] working,
@@ -308,7 +323,9 @@ public final class RowReducer {
             }
         }
     }
-    // A vector is operated on as a matrix with one column, so vectors and matrices share one implementation.
+
+    // A vector is operated on as a matrix with one column,
+    // so vectors and matrices share one implementation.
     private static double[][] toColumn(
         final Vector v
     ) {
@@ -319,6 +336,7 @@ public final class RowReducer {
         }
         return column;
     }
+
     // Turns a one-column working array back into a vector.
     private static Vector fromColumn(
         final double[][] column
@@ -329,5 +347,4 @@ public final class RowReducer {
         }
         return new Vector(entries);
     }
-
 }

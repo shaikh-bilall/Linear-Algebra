@@ -8,9 +8,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A rectangular matrix of finite real numbers, with structural operations such as transpose, merge and row reordering.
+ * A rectangular matrix of finite real numbers, with structural operations such as transpose, merge and
+ * row reordering.
  *
- * @param data the entries, indexed as {@code data[row][column]}; {@code data()} returns a copy of this array
+ * @param data the entries, indexed as {@code data[row][column]}; {@code data()} returns a copy of this
+ * array
  */
 public record Matrix(double[][] data) {
 
@@ -45,6 +47,7 @@ public record Matrix(double[][] data) {
         }
         return copy;
     }
+
     /**
      * Returns the identity matrix of the given dimension.
      *
@@ -66,6 +69,7 @@ public record Matrix(double[][] data) {
         }
         return new Matrix(identityData);
     }
+
     /**
      * Returns the largest absolute value among the entries.
      *
@@ -82,6 +86,7 @@ public record Matrix(double[][] data) {
         }
         return maxAbs;
     }
+
     /**
      * Returns the transpose, with rows and columns swapped.
      *
@@ -100,12 +105,14 @@ public record Matrix(double[][] data) {
         }
         return new Matrix(transposedData);
     }
+
     /**
      * Multiplies this matrix by a vector, giving one entry per row.
      *
      * @param vector the vector to multiply, whose length must equal the number of columns
      * @return the product of this matrix and {@code vector}
-     * @throws MatrixMultiplyDimMismatchException if the length of {@code vector} differs from the number of columns
+     * @throws MatrixMultiplyDimMismatchException if the length of {@code vector} differs from the number
+     * of columns
      */
     public Vector multiply(
         final Vector vector
@@ -136,8 +143,10 @@ public record Matrix(double[][] data) {
         }
         return new Vector(resultData);
     }
+
     /**
-     * Places another matrix to the right of this one, as when forming an augmented matrix {@code [A | b]}.
+     * Places another matrix to the right of this one, as when forming an augmented matrix {@code [A |
+     * b]}.
      *
      * @param other the matrix whose columns are appended, with the same number of rows as this one
      * @return a new matrix with the columns of both; neither operand is changed
@@ -166,10 +175,13 @@ public record Matrix(double[][] data) {
         }
         return new Matrix(mergedData);
     }
+
     /**
-     * Reorders the rows: row {@code i} of the result is row {@code shuffledIndices.get(i)} of this matrix.
+     * Reorders the rows: row {@code i} of the result is row {@code shuffledIndices.get(i)} of this
+     * matrix.
      *
-     * @param shuffledIndices a permutation of the row indices, each of {@code 0} to {@code rows() - 1} exactly once
+     * @param shuffledIndices a permutation of the row indices, each of {@code 0} to {@code rows() - 1}
+     * exactly once
      * @return a new matrix with the rows reordered
      */
     public Matrix permuteRows(
@@ -188,6 +200,7 @@ public record Matrix(double[][] data) {
         }
         return new Matrix(shuffledData);
     }
+
     /**
      * Returns one row as a vector.
      *
@@ -207,6 +220,7 @@ public record Matrix(double[][] data) {
 
         return new Vector(data[rowIndex]);
     }
+
     /**
      * Returns a single entry.
      *
@@ -234,6 +248,7 @@ public record Matrix(double[][] data) {
 
         return data[rowIndex][colIndex];
     }
+
     /**
      * Returns the number of rows.
      *
@@ -244,6 +259,7 @@ public record Matrix(double[][] data) {
 
         return data.length;
     }
+
     /**
      * Returns the number of columns.
      *
@@ -254,6 +270,7 @@ public record Matrix(double[][] data) {
 
         return data[0].length;
     }
+
     /**
      * Returns an independent copy of this matrix.
      *
@@ -264,9 +281,12 @@ public record Matrix(double[][] data) {
 
         return new Matrix(data);
     }
+
     /**
-     * Compares this matrix to another object for equality, entry by entry. Two matrices are equal when they have the
-     * same dimensions and every pair of matching entries is numerically equal, so {@code 0.0} and {@code -0.0} count
+     * Compares this matrix to another object for equality, entry by entry. Two matrices are equal when
+     * they have the
+     * same dimensions and every pair of matching entries is numerically equal, so {@code 0.0} and {@code
+     * -0.0} count
      * as the same entry.
      *
      * @param otherObject the object to compare with
@@ -301,8 +321,10 @@ public record Matrix(double[][] data) {
         }
         return equals;
     }
+
     /**
-     * Returns a hash code that agrees with {@link #equals}: matrices that are equal have the same hash code.
+     * Returns a hash code that agrees with {@link #equals}: matrices that are equal have the same hash
+     * code.
      *
      * @return the hash code of the entries
      */
@@ -317,7 +339,8 @@ public record Matrix(double[][] data) {
         return result;
     }
 
-    // Checks the cheap structural invariants: at least one row and column, no null rows, rectangular shape.
+    // Checks the cheap structural invariants: at least one row and column, no null rows, rectangular
+    // shape.
     private void checkMatrix() {
         Preconditions.checkNotNull(
             data,
@@ -350,5 +373,4 @@ public record Matrix(double[][] data) {
             );
         }
     }
-
 }

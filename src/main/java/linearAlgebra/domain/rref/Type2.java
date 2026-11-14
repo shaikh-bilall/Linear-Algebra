@@ -51,6 +51,7 @@ public record Type2(int targetRow, double scalar) implements OperationRREF {
         checkType2();
         return targetRow;
     }
+
     /**
      * Returns the factor.
      *
@@ -61,6 +62,7 @@ public record Type2(int targetRow, double scalar) implements OperationRREF {
         checkType2();
         return scalar;
     }
+
     /**
      * Multiplies the row of a matrix by the scalar.
      *
@@ -74,6 +76,7 @@ public record Type2(int targetRow, double scalar) implements OperationRREF {
         checkType2();
         return RowReducer.apply(this, A);
     }
+
     /**
      * Multiplies the entry of a vector at the same index by the scalar.
      *

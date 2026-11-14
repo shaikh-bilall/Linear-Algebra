@@ -5,7 +5,8 @@ import com.google.common.base.Preconditions;
 import java.util.Objects;
 
 /**
- * The factorization {@code A = P D P^-1} of a diagonalizable matrix {@code A}. All three matrices are square and the
+ * The factorization {@code A = P D P^-1} of a diagonalizable matrix {@code A}. All three matrices are
+ * square and the
  * same size, and {@code D} is diagonal.
  *
  * @param P        the eigenvectors of {@code A}, one per column
@@ -44,6 +45,7 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
 
         return P;
     }
+
     /**
      * Returns the eigenvalues on the diagonal.
      *
@@ -55,6 +57,7 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
 
         return D;
     }
+
     /**
      * Returns the inverse of the eigenvector matrix.
      *
@@ -66,8 +69,10 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
 
         return inverseP;
     }
+
     /**
-     * Compares this diagonalization to another object for equality: it is equal when {@code P}, {@code D} and the
+     * Compares this diagonalization to another object for equality: it is equal when {@code P}, {@code
+     * D} and the
      * inverse of {@code P} are each equal to those of the other, as defined by {@link Matrix#equals}.
      *
      * @param otherObject the object to compare with
@@ -93,6 +98,7 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
         }
         return equals;
     }
+
     /**
      * Returns a hash code that agrees with {@link #equals}.
      *
@@ -104,7 +110,9 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
 
         return Objects.hash(P, D, inverseP);
     }
-    // Checks the structural invariants: all three matrices exist, are square and the same size, and D is diagonal.
+
+    // Checks the structural invariants: all three matrices exist, are square and the same size, and D is
+    // diagonal.
     private void checkDiagonalization() {
         Preconditions.checkNotNull(
             P,

@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * A vector of finite real numbers, with basic arithmetic: addition, scaling, dot product and length. It can be
+ * A vector of finite real numbers, with basic arithmetic: addition, scaling, dot product and length. It
+ * can be
  * iterated over entry by entry.
  *
  * @param data the entries in order; {@code data()} returns a copy of this array
@@ -28,6 +29,7 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         checkVector();
     }
+
     /**
      * Creates a zero vector.
      *
@@ -50,6 +52,7 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         return data.clone();
     }
+
     /**
      * Returns the entrywise sum of this vector and another of the same length.
      *
@@ -76,6 +79,7 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return new Vector(result);
     }
+
     /**
      * Returns this vector multiplied by a scalar.
      *
@@ -103,6 +107,7 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return new Vector(result);
     }
+
     /**
      * Returns the dot product of this vector and another of the same length.
      *
@@ -128,6 +133,7 @@ public record Vector(double[] data) implements Iterable<Double> {
         );
         return result;
     }
+
     /**
      * Returns the Euclidean length of this vector.
      *
@@ -146,8 +152,10 @@ public record Vector(double[] data) implements Iterable<Double> {
         );
         return norm;
     }
+
     /**
-     * Reorders the entries: entry {@code i} of the result is entry {@code shuffledIndices.get(i)} of this vector.
+     * Reorders the entries: entry {@code i} of the result is entry {@code shuffledIndices.get(i)} of
+     * this vector.
      *
      * @param shuffledIndices each index from {@code 0} to {@code length() - 1}, exactly once
      * @return a new vector with the entries reordered
@@ -168,6 +176,7 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return new Vector(shuffledData);
     }
+
     /**
      * Returns a single entry.
      *
@@ -187,6 +196,7 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         return data[index];
     }
+
     /**
      * Returns the number of entries.
      *
@@ -197,6 +207,7 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         return data.length;
     }
+
     /**
      * Iterates over the entries in order.
      *
@@ -236,6 +247,7 @@ public record Vector(double[] data) implements Iterable<Double> {
             }
         };
     }
+
     /**
      * Returns a new vector that is a copy of this one.
      *
@@ -246,9 +258,12 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         return new Vector(data);
     }
+
     /**
-     * Compares this vector to another object for equality, entry by entry. Two vectors are equal when they have the
-     * same length and every pair of matching entries is numerically equal, so {@code 0.0} and {@code -0.0} count as
+     * Compares this vector to another object for equality, entry by entry. Two vectors are equal when
+     * they have the
+     * same length and every pair of matching entries is numerically equal, so {@code 0.0} and {@code
+     * -0.0} count as
      * the same entry.
      *
      * @param otherObject the object to compare with
@@ -269,8 +284,10 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return equals;
     }
+
     /**
-     * Returns a hash code that agrees with {@link #equals}: vectors that are equal have the same hash code.
+     * Returns a hash code that agrees with {@link #equals}: vectors that are equal have the same hash
+     * code.
      *
      * @return the hash code of the entries
      */
@@ -280,12 +297,15 @@ public record Vector(double[] data) implements Iterable<Double> {
 
         return entriesHashCode(data);
     }
+
     /**
-     * Tells whether two arrays have the same length and numerically equal entries, so {@code 0.0} equals {@code -0.0}.
+     * Tells whether two arrays have the same length and numerically equal entries, so {@code 0.0} equals
+     * {@code -0.0}.
      *
      * @param first  the first array
      * @param second the second array
-     * @return {@code true} if the arrays have the same length and every pair of matching entries is equal
+     * @return {@code true} if the arrays have the same length and every pair of matching entries is
+     * equal
      */
     public static boolean entriesEqual(
         final double[] first,
@@ -311,8 +331,10 @@ public record Vector(double[] data) implements Iterable<Double> {
         }
         return entriesEqual;
     }
+
     /**
-     * Returns a hash code of the entries of an array that agrees with {@link #entriesEqual}, so {@code 0.0} and
+     * Returns a hash code of the entries of an array that agrees with {@link #entriesEqual}, so {@code
+     * 0.0} and
      * {@code -0.0} give the same hash code.
      *
      * @param entries the array to hash
@@ -365,6 +387,7 @@ public record Vector(double[] data) implements Iterable<Double> {
             owner
         );
     }
+
     // Checks the cheap structural invariants: the data exists and has at least one entry.
     private void checkVector() {
         Preconditions.checkNotNull(
@@ -380,6 +403,7 @@ public record Vector(double[] data) implements Iterable<Double> {
             "Vector: all entries must be finite numbers"
         );
     }
+
     // Returns a new array of the given size, filled with zeros.
     private static double[] zeros(
         final int size
@@ -391,5 +415,4 @@ public record Vector(double[] data) implements Iterable<Double> {
         );
         return new double[size];
     }
-
 }

@@ -17,7 +17,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Diagonalizes a real square matrix as {@code A = P D P^-1}, using real numbers only. A matrix with complex
+ * Diagonalizes a real square matrix as {@code A = P D P^-1}, using real numbers only. A matrix with
+ * complex
  * eigenvalues, or with too few independent eigenvectors, has no such factorization and is rejected.
  */
 public final class DiagonalizationLogic {
@@ -26,17 +27,22 @@ public final class DiagonalizationLogic {
 
     // Machine epsilon: the spacing of doubles just above 1. Drives the QR iteration's deflation test.
     private static final double EPSILON = Math.ulp(1.0);
-    // QR sweeps allowed on the active window before giving up; the count restarts whenever an eigenvalue splits off.
-    // Ordinary matrices need a handful, but defective ones converge slowly (a 4x4 Jordan block took about 50).
+    // QR sweeps allowed on the active window before giving up; the count restarts whenever an eigenvalue
+    // splits off.
+    // Ordinary matrices need a handful, but defective ones converge slowly (a 4x4 Jordan block took
+    // about 50).
     private static final int MAX_ITERATIONS = 100;
-    // Relative to the largest absolute entry of the input; eigenvalues closer than this are one repeated eigenvalue,
+    // Relative to the largest absolute entry of the input; eigenvalues closer than this are one repeated
+    // eigenvalue,
     // and an imaginary part this small counts as zero.
     private static final double CLUSTER_TOLERANCE = 1e-6;
-    // Relative to the largest absolute entry of the input; entries of T - lambda*I this small are rounding noise.
+    // Relative to the largest absolute entry of the input; entries of T - lambda*I this small are
+    // rounding noise.
     private static final double ZERO_TOLERANCE = 1e-10;
     // In an RREF every pivot is 1 and everything else in a pivot's row to its left is rounding noise.
     private static final double PIVOT_THRESHOLD = 0.5;
-    // Entries within this relative distance of each other count as equally large when fixing an eigenvector's sign.
+    // Entries within this relative distance of each other count as equally large when fixing an
+    // eigenvector's sign.
     private static final double SIGN_TIE_TOLERANCE = 1e-9;
 
     /**
@@ -55,7 +61,8 @@ public final class DiagonalizationLogic {
     /**
      * Computes the diagonalization of the matrix.
      *
-     * @return the factorization, with the eigenvalues ordered by decreasing magnitude and the columns of {@code P} the
+     * @return the factorization, with the eigenvalues ordered by decreasing magnitude and the columns of
+     * {@code P} the
      *         matching unit eigenvectors
      * @throws ComplexEigenvaluesException if the matrix has complex eigenvalues
      * @throws DefectiveMatrixException if the matrix is defective
@@ -157,7 +164,8 @@ public final class DiagonalizationLogic {
             while (low > 0) {
                 double size = Math.abs(H[low - 1][low - 1]) + Math.abs(H[low][low]);
                 if (size <= EPSILON * norm) {
-                    size = norm; // both neighbors are about zero, so compare against the whole matrix instead
+                    size = norm;
+                    // Both neighbors are about zero, so compare against the whole matrix instead.
                 }
                 if (Math.abs(H[low][low - 1]) <= EPSILON * size) {
                     H[low][low - 1] = 0;
@@ -170,7 +178,8 @@ public final class DiagonalizationLogic {
                 high--; // one eigenvalue split off
                 iterations = 0;
             } else if (low == high - 1) {
-                standardizeBlock(H, Q, low, tolerance); // two eigenvalues split off together as a 2x2 block
+                standardizeBlock(H, Q, low, tolerance);
+                // Two eigenvalues split off together as a 2x2 block.
                 high -= 2;
                 iterations = 0;
             } else {
@@ -183,6 +192,7 @@ public final class DiagonalizationLogic {
             }
         }
     }
+
     // Performs one implicit double-shift QR sweep on the active window.
     private static void francisStep(
         final double[][] H,
@@ -193,7 +203,8 @@ public final class DiagonalizationLogic {
     ) {
         final int n = H.length;
 
-        // With s1, s2 the shifts: mean = (s1 + s2) / 2 and discriminant = mean^2 - s1 s2 = ((a - d) / 2)^2 + bc.
+        // With s1, s2 the shifts: mean = (s1 + s2) / 2 and discriminant = mean^2 - s1 s2 = ((a - d) /
+        // 2)^2 + bc.
         final double a = H[high - 1][high - 1];
         final double b = H[high - 1][high];
         final double c = H[high][high - 1];
@@ -201,7 +212,8 @@ public final class DiagonalizationLogic {
         double mean = (a + d) / 2;
         double discriminant = ((a - d) / 2) * ((a - d) / 2) + b * c;
         if (iteration == 10 || iteration == 20) {
-            // Exceptional shift: the ordinary shifts have stalled, so take a deliberately different pair.
+            // Exceptional shift: the ordinary shifts have stalled, so take a deliberately different
+            // pair.
             final double size = Math.abs(c) + Math.abs(H[high - 1][high - 2]);
             mean = 0.75 * size;
             discriminant = -0.4375 * size * size;
@@ -236,6 +248,7 @@ public final class DiagonalizationLogic {
             }
         }
     }
+
     // Splits the 2x2 block at rows p and p + 1, reporting a complex eigenvalue pair.
     private static void standardizeBlock(
         final double[][] H,
@@ -318,11 +331,15 @@ public final class DiagonalizationLogic {
         clusters.add(new Cluster(sum / size, size));
 
         // Round magnitudes to tolerance steps so +1 and -1 tie, then put the larger value first.
-        clusters.sort(Comparator.comparingLong((Cluster cluster) -> Math.round(Math.abs(cluster.value()) / tolerance))
+        clusters.sort(
+            Comparator.comparingLong(
+                (Cluster cluster) -> Math.round(Math.abs(cluster.value()) / tolerance)
+            )
             .thenComparingDouble(Cluster::value)
             .reversed());
         return clusters;
     }
+
     // Returns a basis of eigenvectors for one eigenvalue, or reports a defective matrix.
     private static List<Vector> getEigenvectors(
         final double[][] T,
@@ -377,7 +394,9 @@ public final class DiagonalizationLogic {
         }
         return eigenvectors;
     }
-    // Unit length, with the sign fixed so that the entry of largest magnitude is positive (the first one on a tie).
+
+    // Unit length, with the sign fixed so that the entry of largest magnitude is positive (the first one
+    // on a tie).
     private static Vector normalize(
         final Vector v
     ) {
@@ -414,12 +433,14 @@ public final class DiagonalizationLogic {
         try {
             return matrix.multiply(vector);
         } catch (MatrixMultiplyDimMismatchException e) {
-            throw new IllegalStateException(
-                "DiagonalizationLogic.multiplyKnownDimensions: the dimensions were expected to match",
-                e
+            Preconditions.checkState(
+                false,
+                "DiagonalizationLogic.multiplyKnownDimensions: matrix columns must match vector length"
             );
+            return null;
         }
     }
+
     // Turns x into a Householder reflector, returning false when x is zero.
     private static boolean toReflector(
         final double[] x
@@ -441,7 +462,9 @@ public final class DiagonalizationLogic {
         }
         return true;
     }
-    // M := (I - 2vv^T) M on the rows row0 ... row0 + v.length - 1, restricted to the columns [col0, col1).
+
+    // M := (I - 2vv^T) M on the rows row0 ... row0 + v.length - 1, restricted to the columns [col0,
+    // col1].
     private static void reflectRows(
         final double[][] M,
         final double[] v,
@@ -459,7 +482,9 @@ public final class DiagonalizationLogic {
             }
         }
     }
-    // M := M (I - 2vv^T) on the columns col0 ... col0 + v.length - 1, restricted to the rows [row0, row1).
+
+    // M := M (I - 2vv^T) on the columns col0 ... col0 + v.length - 1, restricted to the rows [row0,
+    // row1].
     private static void reflectColumns(
         final double[][] M,
         final double[] v,
@@ -477,7 +502,9 @@ public final class DiagonalizationLogic {
             }
         }
     }
-    // M := M G on the columns p and p + 1, restricted to the rows [row0, row1), with G = [[cos, -sin], [sin, cos]].
+
+    // M := M G on the columns p and p + 1, restricted to the rows [row0, row1), with G = [[cos, -sin],
+    // [sin, cos]].
     private static void rotateColumns(
         final double[][] M,
         final int p,
@@ -493,6 +520,7 @@ public final class DiagonalizationLogic {
             M[r][p + 1] = cos * right - sin * left;
         }
     }
+
     // The Frobenius norm of M, which is the square root of the sum of the squares of its entries.
     private static double getFrobeniusNorm(
         final double[][] M
@@ -505,6 +533,7 @@ public final class DiagonalizationLogic {
         }
         return norm;
     }
+
     // The largest absolute entry of A, or 1 for the zero matrix so that dividing by it is always safe.
     private static double getScale(
         final Matrix A
@@ -512,5 +541,4 @@ public final class DiagonalizationLogic {
         final double maxAbs = A.maxAbs();
         return (maxAbs == 0) ? 1 : maxAbs;
     }
-
 }

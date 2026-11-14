@@ -48,6 +48,7 @@ public record Type1(int sourceRow, int targetRow) implements OperationRREF {
         checkType1();
         return sourceRow;
     }
+
     /**
      * Returns the index of the other swapped row.
      *
@@ -58,6 +59,7 @@ public record Type1(int sourceRow, int targetRow) implements OperationRREF {
         checkType1();
         return targetRow;
     }
+
     /**
      * Swaps the two rows of a matrix.
      *
@@ -71,6 +73,7 @@ public record Type1(int sourceRow, int targetRow) implements OperationRREF {
         checkType1();
         return RowReducer.apply(this, A);
     }
+
     /**
      * Swaps the two entries of a vector at the same indices.
      *

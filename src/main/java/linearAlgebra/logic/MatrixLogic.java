@@ -1,7 +1,7 @@
 package linearAlgebra.logic;
 
 import com.google.common.base.Preconditions;
-
+import linearAlgebra.domain.rref.Reduction;
 import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
@@ -75,6 +75,7 @@ public final class MatrixLogic {
 
         return new Matrix(resultData);
     }
+
     /**
      * Returns the reduced row echelon form of the matrix.
      *
@@ -85,6 +86,7 @@ public final class MatrixLogic {
 
         return RowReducer.reduce(A).reduced();
     }
+
     /**
      * Returns the inverse of the matrix.
      *
@@ -100,12 +102,13 @@ public final class MatrixLogic {
             throw new InverseNotAvailableException();
         }
 
-        final RowReducer.Reduction reduction = RowReducer.reduce(A);
+        final Reduction reduction = RowReducer.reduce(A);
         if (getDeterminant(reduction) == 0) {
             throw new InverseNotAvailableException();
         }
         return RowReducer.applyAll(reduction.operations(), Matrix.identity(A.rows()));
     }
+
     /**
      * Returns the determinant of the matrix.
      *
@@ -133,7 +136,7 @@ public final class MatrixLogic {
 
     // Returns the determinant from the operations recorded while reducing a square matrix.
     private static double getDeterminant(
-        final RowReducer.Reduction reduction
+        final Reduction reduction
     ) {
         final Matrix reduced = reduction.reduced();
         for (int i = 0; i < reduced.rows(); i++) {
@@ -153,5 +156,4 @@ public final class MatrixLogic {
         }
         return determinant;
     }
-
 }

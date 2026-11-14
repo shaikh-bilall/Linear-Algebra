@@ -61,5 +61,4 @@ public final class Permutations {
             seen[index] = true;
         }
     }
-
 }

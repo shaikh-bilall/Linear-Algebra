@@ -66,6 +66,7 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements Oper
         checkType3();
         return sourceRow;
     }
+
     /**
      * Returns the index of the row that receives the multiple.
      *
@@ -76,6 +77,7 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements Oper
         checkType3();
         return targetRow;
     }
+
     /**
      * Returns the multiple.
      *
@@ -86,6 +88,7 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements Oper
         checkType3();
         return scalar;
     }
+
     /**
      * Adds the multiple of the source row to the target row of a matrix.
      *
@@ -99,6 +102,7 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements Oper
         checkType3();
         return RowReducer.apply(this, A);
     }
+
     /**
      * Adds the multiple of the source entry to the target entry of a vector.
      *

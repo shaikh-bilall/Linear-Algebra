@@ -2,6 +2,7 @@ package linearAlgebra.domain.rref;
 
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
+import linearAlgebra.domain.exceptions.NonExistentRREFOperationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -21,11 +22,7 @@ import static linearAlgebra.TestUtils.randomScalar;
 import static linearAlgebra.TestUtils.sampleData;
 import static linearAlgebra.TestUtils.shuffledIndices;
 import static linearAlgebra.TestUtils.vector;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class RowReducerTest {
 
@@ -53,7 +50,7 @@ class RowReducerTest {
     @Test
     void reduceChoosesTheLargestMagnitudePivot() {
         var reduction = RowReducer.reduce(new Matrix(new double[][]{{1, 2}, {-4, 1}, {2, 5}}));
-        assertEquals(new Type1(0, 1), reduction.operations().get(0));
+        assertEquals(new Type1(0, 1), reduction.operations().getFirst());
     }
 
     @Test
@@ -105,7 +102,7 @@ class RowReducerTest {
         assertEquals(0.0, reduction.reduced().get(1, 0), 0.0);
         assertEquals(1e-12, reduction.reduced().get(1, 1), 1e-13);
         for (OperationRREF operation : reduction.operations()) {
-            assertTrue(!(operation instanceof Type2), "no pivot may be taken from a noise-level entry");
+            assertFalse(operation instanceof Type2, "no pivot may be taken from a noise-level entry");
         }
     }
 
@@ -156,7 +153,7 @@ class RowReducerTest {
             int n = 1 + random.nextInt(4);
             double[][] data = randomData(random, n, n, 5);
             var reduction = RowReducer.reduce(new Matrix(data));
-            if (!isIdentity(reduction.reduced())) {
+            if (isNotIdentity(reduction.reduced())) {
                 continue;
             }
             var inverse = RowReducer.applyAll(reduction.operations(), Matrix.identity(n));
@@ -181,7 +178,7 @@ class RowReducerTest {
     void theOperationListOfAReductionCannotBeModified() {
         var operations = RowReducer.reduce(new Matrix(new double[][]{{2, 4}, {1, 3}})).operations();
         assertThrows(UnsupportedOperationException.class, () -> operations.add(new Type1(0, 1)));
-        assertThrows(UnsupportedOperationException.class, () -> operations.remove(0));
+        assertThrows(UnsupportedOperationException.class, operations::removeFirst);
     }
 
     // ---------- reduce: exceptions ----------
@@ -197,7 +194,7 @@ class RowReducerTest {
     void reductionReportsItsComponents() {
         var matrix = new Matrix(sampleData());
         List<OperationRREF> operations = List.of(new Type1(0, 1));
-        var reduction = new RowReducer.Reduction(matrix, operations);
+        var reduction = new Reduction(matrix, operations);
         assertSame(matrix, reduction.reduced());
         assertEquals(operations, reduction.operations());
     }
@@ -205,7 +202,7 @@ class RowReducerTest {
     @Test
     void reductionCopiesTheOperationList() {
         List<OperationRREF> operations = new ArrayList<>(List.of(new Type1(0, 1)));
-        var reduction = new RowReducer.Reduction(new Matrix(sampleData()), operations);
+        var reduction = new Reduction(new Matrix(sampleData()), operations);
         operations.add(new Type2(0, 2));
         assertEquals(List.of(new Type1(0, 1)), reduction.operations());
         assertNotSame(operations, reduction.operations());
@@ -214,16 +211,16 @@ class RowReducerTest {
     @Test
     void reductionRejectsANullMatrixAndNullOperations() {
         List<OperationRREF> none = List.of();
-        assertThrows(NullPointerException.class, () -> new RowReducer.Reduction(null, none));
+        assertThrows(NullPointerException.class, () -> new Reduction(null, none));
         assertThrows(NullPointerException.class,
-            () -> new RowReducer.Reduction(new Matrix(sampleData()), null));
+            () -> new Reduction(new Matrix(sampleData()), null));
     }
 
     @Test
     void reductionRejectsAnOperationListWithANullElement() {
         List<OperationRREF> withNull = Arrays.asList(new Type1(0, 1), null);
         assertThrows(NullPointerException.class,
-            () -> new RowReducer.Reduction(new Matrix(sampleData()), withNull));
+            () -> new Reduction(new Matrix(sampleData()), withNull));
     }
 
     // ---------- apply to a matrix ----------
@@ -290,7 +287,10 @@ class RowReducerTest {
     @Test
     void applyToAMatrixRejectsAnUnsupportedOperation() {
         var matrix = new Matrix(sampleData());
-        assertThrows(IllegalStateException.class, () -> RowReducer.apply(unsupportedOperation(), matrix));
+        assertThrows(
+            NonExistentRREFOperationException.class,
+            () -> RowReducer.apply(unsupportedOperation(), matrix)
+        );
     }
 
     // ---------- apply to a vector ----------
@@ -351,7 +351,10 @@ class RowReducerTest {
     @Test
     void applyToAVectorRejectsAnUnsupportedOperation() {
         var v = vector(1, 2, 3);
-        assertThrows(IllegalStateException.class, () -> RowReducer.apply(unsupportedOperation(), v));
+        assertThrows(
+            NonExistentRREFOperationException.class,
+            () -> RowReducer.apply(unsupportedOperation(), v)
+        );
     }
 
     // ---------- applyAll to a matrix ----------
@@ -377,9 +380,9 @@ class RowReducerTest {
     }
 
     @Test
-    void applyAllToAMatrixReturnsTheOperandItselfForAnEmptyList() {
+    void applyAllToAMatrixReturnsAnEqualMatrixForAnEmptyList() {
         var matrix = new Matrix(sampleData());
-        assertSame(matrix, RowReducer.applyAll(List.of(), matrix));
+        assertEquals(matrix, RowReducer.applyAll(List.of(), matrix));
     }
 
     @Test
@@ -425,7 +428,10 @@ class RowReducerTest {
     void applyAllToAMatrixRejectsAnUnsupportedOperation() {
         var matrix = new Matrix(sampleData());
         List<OperationRREF> operations = List.of(unsupportedOperation());
-        assertThrows(IllegalStateException.class, () -> RowReducer.applyAll(operations, matrix));
+        assertThrows(
+            NonExistentRREFOperationException.class,
+            () -> RowReducer.applyAll(operations, matrix)
+        );
     }
 
     // ---------- applyAll to a vector ----------
@@ -442,9 +448,9 @@ class RowReducerTest {
     }
 
     @Test
-    void applyAllToAVectorReturnsTheOperandItselfForAnEmptyList() {
+    void applyAllToAVectorReturnsAnEqualVectorForAnEmptyList() {
         var v = vector(1, 2, 3);
-        assertSame(v, RowReducer.applyAll(List.of(), v));
+        assertEquals(v, RowReducer.applyAll(List.of(), v));
     }
 
     @Test
@@ -490,7 +496,10 @@ class RowReducerTest {
     void applyAllToAVectorRejectsAnUnsupportedOperation() {
         var v = vector(1, 2, 3);
         List<OperationRREF> operations = List.of(unsupportedOperation());
-        assertThrows(IllegalStateException.class, () -> RowReducer.applyAll(operations, v));
+        assertThrows(
+            NonExistentRREFOperationException.class,
+            () -> RowReducer.applyAll(operations, v)
+        );
     }
 
     // ---------- matrix and vector paths together ----------
@@ -503,7 +512,7 @@ class RowReducerTest {
             int n = 1 + random.nextInt(4);
             var a = new Matrix(randomData(random, n, n, 5));
             var reduction = RowReducer.reduce(a);
-            if (!isIdentity(reduction.reduced())) {
+            if (isNotIdentity(reduction.reduced())) {
                 continue;
             }
             var b = new Vector(randomEntries(random, n));
@@ -568,16 +577,16 @@ class RowReducerTest {
         };
     }
 
-    private static boolean isIdentity(
+    private static boolean isNotIdentity(
         final Matrix matrix
     ) {
         for (int i = 0; i < matrix.rows(); i++) {
             for (int j = 0; j < matrix.cols(); j++) {
                 if (Math.abs(matrix.get(i, j) - ((i == j) ? 1 : 0)) > TOL) {
-                    return false;
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 }
