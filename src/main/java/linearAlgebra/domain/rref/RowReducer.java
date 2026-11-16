@@ -226,10 +226,11 @@ public final class RowReducer {
             case Type1 swap -> {
                 final int source = swap.sourceRow();
                 final int target = swap.targetRow();
-                final double[] temp = data[swap.sourceRow()];
 
                 checkRowFits(data.length, source);
                 checkRowFits(data.length, target);
+
+                final double[] temp = data[swap.sourceRow()];
 
                 data[source] = data[target];
                 data[target] = temp;

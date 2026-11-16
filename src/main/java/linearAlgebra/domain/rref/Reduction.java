@@ -1,29 +1,44 @@
 package linearAlgebra.domain.rref;
 
 import com.google.common.base.Preconditions;
+
 import linearAlgebra.domain.Matrix;
 
 import java.util.List;
 
 /**
- * The result of reducing a matrix to reduced row echelon form.
+ * The result of reducing a {@link Matrix} to reduced row echelon form.
  *
- * @param reduced    the reduced matrix
- * @param operations the operations that transform the original matrix into {@code reduced}, in order
+ * @param reduced    the reduced {@link Matrix}
+ * @param operations the {@link RREFOperation}s that produced {@code reduced}, in order
  */
-public record Reduction(Matrix reduced, List<RREFOperation> operations) {
+public record Reduction(
+    Matrix reduced,
+    List<RREFOperation> operations
+) {
 
     /**
-     * Creates the result of reducing a matrix.
+     * Creates the result of reducing a {@link Matrix}.
      *
-     * @param reduced    the reduced matrix
-     * @param operations the operations that transform the original matrix into {@code reduced}, in order
+     * @param reduced    the reduced {@link Matrix}
+     * @param operations the {@link RREFOperation}s that produced {@code reduced}, in order
      */
     public Reduction {
         Preconditions.checkNotNull(
             reduced,
             "Reduction: reduced matrix must not be null"
         );
+        Preconditions.checkNotNull(
+            operations,
+            "Reduction: operations must not be null"
+        );
+        for (var operation : operations) {
+            Preconditions.checkNotNull(
+                operation,
+                "Reduction: operations list must not contain null elements"
+            );
+        }
+
         operations = List.copyOf(operations);
     }
 }

@@ -6,21 +6,26 @@ import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
 
 /**
- * The elementary operation that adds a multiple of one row to another row.
+ * The elementary operation that adds a {@code scalar} multiple of one row to another row.
  *
- * @param sourceRow the zero-based index of the row whose multiple is added; it is left unchanged
- * @param targetRow the zero-based index of the row that receives the multiple
- * @param scalar    the multiple, which must be nonzero and finite
+ * @param sourceRow the zero-based index of the row whose {@code scalar} multiple is added;
+ *                  it is left unchanged
+ * @param targetRow the zero-based index of the row that receives the {@code scalar} multiple
+ * @param scalar    the nonzero, finite {@code scalar} multiple
  */
-public record Type3(int sourceRow, int targetRow, double scalar) implements RREFOperation {
+public record Type3(
+    int sourceRow,
+    int targetRow,
+    double scalar
+) implements RREFOperation {
 
     /**
      * Creates the operation.
      *
-     * @param sourceRow the zero-based index of the row whose multiple is added
-     * @param targetRow the zero-based index of the row that receives the multiple; it must differ from
-     *                  {@code sourceRow}
-     * @param scalar    the multiple, which must be nonzero and finite
+     * @param sourceRow the zero-based index of the row whose {@code scalar} multiple is added
+     * @param targetRow the zero-based index of the row that receives the {@code scalar} multiple;
+     *                  it must differ from {@code sourceRow}
+     * @param scalar    the nonzero, finite {@code scalar} multiple
      */
     public Type3(
         final int sourceRow,
@@ -50,70 +55,85 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements RREF
             scalar != 0,
             "Type3: scalar must be non-zero"
         );
+
         this.sourceRow = sourceRow;
         this.targetRow = targetRow;
         this.scalar = scalar;
+
         checkType3();
     }
 
     /**
-     * Returns the index of the row whose multiple is added.
+     * Returns the index of the row whose {@code scalar} multiple is added.
      *
      * @return the zero-based row index
      */
     @Override
     public int sourceRow() {
         checkType3();
+
         return sourceRow;
     }
 
     /**
-     * Returns the index of the row that receives the multiple.
+     * Returns the index of the row that receives the {@code scalar} multiple.
      *
      * @return the zero-based row index
      */
     @Override
     public int targetRow() {
         checkType3();
+
         return targetRow;
     }
 
     /**
-     * Returns the multiple.
+     * Returns the {@code scalar} multiple.
      *
-     * @return the nonzero, finite scalar
+     * @return the nonzero, finite {@code scalar} multiple
      */
     @Override
     public double scalar() {
         checkType3();
+
         return scalar;
     }
 
     /**
-     * Adds the multiple of the source row to the target row of a matrix.
+     * Adds the {@code scalar} multiple of the source row to the target row of a {@link Matrix}.
      *
-     * @param A the matrix to operate on
-     * @return a new matrix with the operation applied; {@code A} is unchanged
+     * @param A the {@link Matrix} to operate on
+     * @return a new {@link Matrix} with the operation applied; {@code A} is unchanged
      */
     @Override
     public Matrix apply(
         final Matrix A
     ) {
+        Preconditions.checkNotNull(
+            A,
+            "Type3.apply: matrix must not be null"
+        );
         checkType3();
+
         return RowReducer.apply(this, A);
     }
 
     /**
-     * Adds the multiple of the source entry to the target entry of a vector.
+     * Adds the {@code scalar} multiple of the source entry to the target entry of a {@link Vector}.
      *
-     * @param v the vector to operate on
-     * @return a new vector with the operation applied; {@code v} is unchanged
+     * @param v the {@link Vector} to operate on
+     * @return a new {@link Vector} with the operation applied; {@code v} is unchanged
      */
     @Override
     public Vector apply(
         final Vector v
     ) {
+        Preconditions.checkNotNull(
+            v,
+            "Type3.apply: vector must not be null"
+        );
         checkType3();
+
         return RowReducer.apply(this, v);
     }
 
@@ -121,7 +141,7 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements RREF
     private void checkType3() {
         Preconditions.checkState(
             sourceRow >= 0 &&
-                targetRow >= 0,
+            targetRow >= 0,
             "Type3: row indices must be non-negative"
         );
         Preconditions.checkState(
@@ -130,7 +150,7 @@ public record Type3(int sourceRow, int targetRow, double scalar) implements RREF
         );
         Preconditions.checkState(
             scalar != 0 &&
-                Double.isFinite(scalar),
+            Double.isFinite(scalar),
             "Type3: scalar must be non-zero and finite"
         );
     }

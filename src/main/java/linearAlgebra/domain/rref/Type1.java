@@ -11,7 +11,10 @@ import linearAlgebra.domain.Vector;
  * @param sourceRow the zero-based index of one of the rows
  * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
  */
-public record Type1(int sourceRow, int targetRow) implements RREFOperation {
+public record Type1(
+    int sourceRow,
+    int targetRow
+) implements RREFOperation {
 
     /**
      * Creates the operation.
@@ -33,8 +36,10 @@ public record Type1(int sourceRow, int targetRow) implements RREFOperation {
             "Type1: target row index must be non-negative: %s",
             targetRow
         );
+
         this.sourceRow = sourceRow;
         this.targetRow = targetRow;
+
         checkType1();
     }
 
@@ -46,6 +51,7 @@ public record Type1(int sourceRow, int targetRow) implements RREFOperation {
     @Override
     public int sourceRow() {
         checkType1();
+
         return sourceRow;
     }
 
@@ -57,34 +63,45 @@ public record Type1(int sourceRow, int targetRow) implements RREFOperation {
     @Override
     public int targetRow() {
         checkType1();
+
         return targetRow;
     }
 
     /**
-     * Swaps the two rows of a matrix.
+     * Swaps the two rows of a {@link Matrix}.
      *
-     * @param A the matrix to operate on
-     * @return a new matrix with the rows swapped; {@code A} is unchanged
+     * @param A the {@link Matrix} to operate on
+     * @return a new {@link Matrix} with the rows swapped; {@code A} is unchanged
      */
     @Override
     public Matrix apply(
         final Matrix A
     ) {
+        Preconditions.checkNotNull(
+            A,
+            "Type1.apply: matrix must not be null"
+        );
         checkType1();
+
         return RowReducer.apply(this, A);
     }
 
     /**
-     * Swaps the two entries of a vector at the same indices.
+     * Swaps the two entries of a {@link Vector} at the same indices.
      *
-     * @param v the vector to operate on
-     * @return a new vector with the entries swapped; {@code v} is unchanged
+     * @param v the {@link Vector} to operate on
+     * @return a new {@link Vector} with the entries swapped; {@code v} is unchanged
      */
     @Override
     public Vector apply(
         final Vector v
     ) {
+        Preconditions.checkNotNull(
+            v,
+            "Type1.apply: vector must not be null"
+        );
         checkType1();
+
         return RowReducer.apply(this, v);
     }
 
@@ -92,7 +109,7 @@ public record Type1(int sourceRow, int targetRow) implements RREFOperation {
     private void checkType1() {
         Preconditions.checkState(
             sourceRow >= 0 &&
-                targetRow >= 0,
+            targetRow >= 0,
             "Type1: row indices must be non-negative"
         );
     }
