@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * It finds the reduced row echelon form ({@code RREF}) of a {@link Matrix}
- * together with the {@link RREFOperation}s that lead to it, and applies {@link RREFOperation}s
+ * together with the {@link RREFOperation}s that produced it, and applies them
  * to {@link Matrix} and {@link Vector} objects.
  */
 public final class RowReducer {
@@ -20,6 +20,7 @@ public final class RowReducer {
     // anything at or below this value counts as zero.
     private static final double RELATIVE_TOLERANCE = 1e-10;
 
+    // Prevents instantiation.
     private RowReducer() {
     }
 
@@ -46,7 +47,10 @@ public final class RowReducer {
         int pivotRow = 0;
         int pivotCol = 0;
 
-        while (pivotRow < rows && pivotCol < cols) {
+        while (
+            pivotRow < rows &&
+            pivotCol < cols
+        ) {
             final int bestRow = findPivotRow(working, pivotRow, pivotCol, tolerance);
             if (bestRow != -1) {
                 if (bestRow != pivotRow) {
@@ -60,7 +64,7 @@ public final class RowReducer {
 
                 eliminateColumn(working, operations, pivotRow, pivotCol, tolerance);
                 pivotRow++;
-            } // otherwise, no usable pivot in this column: move right, stay on the same row
+            } // otherwise, no usable pivot in this column: move right, stay on the same row.
             pivotCol++;
         }
 
@@ -79,8 +83,8 @@ public final class RowReducer {
      * @param A         the {@link Matrix} to operate on
      * @return a {@link Matrix} with the {@link RREFOperation} applied;
      *         {@code A} is unchanged
-     * @throws NonExistentRREFOperationException if {@code operation} is not a supported
-     *         elementary row operation
+     * @throws NonExistentRREFOperationException
+     *         if {@code operation} is not a supported operation
      */
     public static Matrix apply(
         final RREFOperation operation,
@@ -109,8 +113,8 @@ public final class RowReducer {
      * @param v         the {@link Vector} to operate on
      * @return a {@link Vector} with the {@link RREFOperation} applied;
      *         {@code v} is unchanged
-     * @throws NonExistentRREFOperationException if {@code operation} is not a supported
-     *         elementary row operation
+     * @throws NonExistentRREFOperationException
+     *         if {@code operation} is not a supported operation
      */
     public static Vector apply(
         final RREFOperation operation,
@@ -136,12 +140,12 @@ public final class RowReducer {
      * Applies a sequence of {@link RREFOperation}s, in order,
      * to the rows of a {@link Matrix}.
      *
-     * @param operations the operations to apply
+     * @param operations the {@link RREFOperation}s to apply
      * @param A          the {@link Matrix} to operate on
      * @return a {@link Matrix} after all {@link RREFOperation}s are applied;
-     *         a matrix equal to {@code A} when the sequence is empty
-     * @throws NonExistentRREFOperationException if an operation is not a supported
-     *         elementary row operation
+     *         a {@link Matrix} equal to {@code A} when the sequence is empty
+     * @throws NonExistentRREFOperationException
+     *         if {@code operation} is not a supported operation
      */
     public static Matrix applyAll(
         final List<RREFOperation> operations,
@@ -167,12 +171,12 @@ public final class RowReducer {
      * Applies a sequence of {@link RREFOperation}s, in order,
      * to the entries of a {@link Vector}.
      *
-     * @param operations the {@link RREFOperation} to apply
+     * @param operations the {@link RREFOperation}s to apply
      * @param v          the {@link Vector} to operate on
      * @return a {@link Vector} after all {@link RREFOperation}s are applied;
-     *         a vector equal to {@code v} when the sequence is empty
-     * @throws NonExistentRREFOperationException if an operation is not a supported
-     *         elementary row operation
+     *         a {@link Vector} equal to {@code v} when the sequence is empty
+     * @throws NonExistentRREFOperationException
+     *         if {@code operation} is not a supported operation
      */
     public static Vector applyAll(
         final List<RREFOperation> operations,
@@ -204,7 +208,7 @@ public final class RowReducer {
         for (var operation : operations) {
             Preconditions.checkNotNull(
                 operation,
-                "RowReducer.applyAll: operations must not be null"
+                "RowReducer.applyAll: operations list must not contain null elements"
             );
             applyInPlace(data, operation);
         }
@@ -220,16 +224,22 @@ public final class RowReducer {
     {
         switch (operation) {
             case Type1 swap -> {
-                checkRowFits(data.length, swap.sourceRow());
-                checkRowFits(data.length, swap.targetRow());
+                final int source = swap.sourceRow();
+                final int target = swap.targetRow();
                 final double[] temp = data[swap.sourceRow()];
-                data[swap.sourceRow()] = data[swap.targetRow()];
-                data[swap.targetRow()] = temp;
+
+                checkRowFits(data.length, source);
+                checkRowFits(data.length, target);
+
+                data[source] = data[target];
+                data[target] = temp;
             }
             case Type2 scale -> {
                 final int target = scale.targetRow();
                 final double factor = scale.scalar();
+
                 checkRowFits(data.length, target);
+
                 for (int j = 0; j < data[target].length; j++) {
                     data[target][j] *= factor;
                     Preconditions.checkState(
@@ -243,8 +253,10 @@ public final class RowReducer {
                 final int source = combine.sourceRow();
                 final int target = combine.targetRow();
                 final double factor = combine.scalar();
+
                 checkRowFits(data.length, source);
                 checkRowFits(data.length, target);
+
                 for (int j = 0; j < data[target].length; j++) {
                     data[target][j] += factor * data[source][j];
                     Preconditions.checkState(
@@ -265,7 +277,7 @@ public final class RowReducer {
     ) {
         Preconditions.checkArgument(
             row >= 0 &&
-                row < rows,
+            row < rows,
             "RowReducer: index out of bounds for an operand with %s rows: %s",
             rows,
             row
