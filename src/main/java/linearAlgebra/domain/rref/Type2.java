@@ -26,20 +26,6 @@ public record Type2(
         final int targetRow,
         final double scalar
     ) {
-        Preconditions.checkArgument(
-            targetRow >= 0,
-            "Type2: target row index must be non-negative: %s",
-            targetRow
-        );
-        Preconditions.checkArgument(
-            Double.isFinite(scalar),
-            "Type2: scalar must be finite"
-        );
-        Preconditions.checkArgument(
-            scalar != 0,
-            "Type2: scalar must be non-zero"
-        );
-
         this.targetRow = targetRow;
         this.scalar = scalar;
 
@@ -112,12 +98,16 @@ public record Type2(
     private void checkType2() {
         Preconditions.checkState(
             targetRow >= 0,
-            "Type2: target row index must be non-negative"
+            "Type2: target row index must be non-negative: %s",
+            targetRow
         );
         Preconditions.checkState(
-            scalar != 0 &&
             Double.isFinite(scalar),
-            "Type2: scalar must be non-zero and finite"
+            "Type2: scalar must be finite"
+        );
+        Preconditions.checkState(
+            scalar != 0,
+            "Type2: scalar must be non-zero"
         );
     }
 }

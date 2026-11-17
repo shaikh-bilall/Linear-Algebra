@@ -32,30 +32,6 @@ public record Type3(
         final int targetRow,
         final double scalar
     ) {
-        Preconditions.checkArgument(
-            sourceRow >= 0,
-            "Type3: source row index must be non-negative: %s",
-            sourceRow
-        );
-        Preconditions.checkArgument(
-            targetRow >= 0,
-            "Type3: target row index must be non-negative: %s",
-            targetRow
-        );
-        Preconditions.checkArgument(
-            sourceRow != targetRow,
-            "Type3: source and target rows must differ: %s",
-            sourceRow
-        );
-        Preconditions.checkArgument(
-            Double.isFinite(scalar),
-            "Type3: scalar must be finite"
-        );
-        Preconditions.checkArgument(
-            scalar != 0,
-            "Type3: scalar must be non-zero"
-        );
-
         this.sourceRow = sourceRow;
         this.targetRow = targetRow;
         this.scalar = scalar;
@@ -140,18 +116,27 @@ public record Type3(
     // Checks that the indices are non-negative and different, and the scalar is nonzero and finite.
     private void checkType3() {
         Preconditions.checkState(
-            sourceRow >= 0 &&
+            sourceRow >= 0,
+            "Type3: source row index must be non-negative: %s",
+            sourceRow
+        );
+        Preconditions.checkState(
             targetRow >= 0,
-            "Type3: row indices must be non-negative"
+            "Type3: target row index must be non-negative: %s",
+            targetRow
         );
         Preconditions.checkState(
             sourceRow != targetRow,
-            "Type3: source and target rows must differ"
+            "Type3: source and target rows must differ: %s",
+            sourceRow
         );
         Preconditions.checkState(
-            scalar != 0 &&
             Double.isFinite(scalar),
-            "Type3: scalar must be non-zero and finite"
+            "Type3: scalar must be finite"
+        );
+        Preconditions.checkState(
+            scalar != 0,
+            "Type3: scalar must be non-zero"
         );
     }
 }

@@ -26,17 +26,6 @@ public record Type1(
         final int sourceRow,
         final int targetRow
     ) {
-        Preconditions.checkArgument(
-            sourceRow >= 0,
-            "Type1: source row index must be non-negative: %s",
-            sourceRow
-        );
-        Preconditions.checkArgument(
-            targetRow >= 0,
-            "Type1: target row index must be non-negative: %s",
-            targetRow
-        );
-
         this.sourceRow = sourceRow;
         this.targetRow = targetRow;
 
@@ -108,9 +97,14 @@ public record Type1(
     // Checks that both indices are non-negative.
     private void checkType1() {
         Preconditions.checkState(
-            sourceRow >= 0 &&
+            sourceRow >= 0,
+            "Type1: source row index must be non-negative: %s",
+            sourceRow
+        );
+        Preconditions.checkState(
             targetRow >= 0,
-            "Type1: row indices must be non-negative"
+            "Type1: target row index must be non-negative: %s",
+            targetRow
         );
     }
 }

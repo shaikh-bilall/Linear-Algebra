@@ -23,7 +23,18 @@ public record Reduction(
      * @param reduced    the reduced {@link Matrix}
      * @param operations the {@link RREFOperation}s that produced {@code reduced}, in order
      */
-    public Reduction {
+    public Reduction(
+        final Matrix reduced,
+        final List<RREFOperation> operations
+    ) {
+        checkReduction(reduced, operations);
+
+        this.reduced = reduced;
+        this.operations = List.copyOf(operations);
+    }
+
+    // Checks that the reduced matrix and the operations that produced it are not null.
+    private static void checkReduction(Matrix reduced, List<RREFOperation> operations) {
         Preconditions.checkNotNull(
             reduced,
             "Reduction: reduced matrix must not be null"
@@ -38,7 +49,5 @@ public record Reduction(
                 "Reduction: operations list must not contain null elements"
             );
         }
-
-        operations = List.copyOf(operations);
     }
 }

@@ -230,7 +230,7 @@ public final class RowReducer {
                 checkRowFits(data.length, source);
                 checkRowFits(data.length, target);
 
-                final double[] temp = data[swap.sourceRow()];
+                final double[] temp = data[source];
 
                 data[source] = data[target];
                 data[target] = temp;
