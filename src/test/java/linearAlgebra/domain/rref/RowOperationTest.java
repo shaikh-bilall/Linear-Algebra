@@ -21,40 +21,40 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class RREFOperationTest {
+class RowOperationTest {
 
     private static final double TOL = 1e-12;
 
-    // ---------- Type1: construction ----------
+    // ---------- RowSwap: construction ----------
 
     @Test
     void type1ReportsItsIndices() {
-        var swap = new Type1(2, 5);
+        var swap = new RowSwap(2, 5);
         assertEquals(2, swap.sourceRow());
         assertEquals(5, swap.targetRow());
     }
 
     @Test
     void type1AcceptsEqualIndices() {
-        var swap = new Type1(1, 1);
+        var swap = new RowSwap(1, 1);
         assertEquals(1, swap.sourceRow());
         assertEquals(1, swap.targetRow());
     }
 
-    @ParameterizedTest(name = "Type1({0}, {1}) is rejected")
+    @ParameterizedTest(name = "RowSwap({0}, {1}) is rejected")
     @CsvSource({"-1, 0", "0, -1", "-1, -1", "-2147483648, 0"})
     void type1RejectsNegativeIndices(
         final int source,
         final int target
     ) {
-        assertThrows(IllegalArgumentException.class, () -> new Type1(source, target));
+        assertThrows(IllegalArgumentException.class, () -> new RowSwap(source, target));
     }
 
-    // ---------- Type2: construction ----------
+    // ---------- RowScale: construction ----------
 
     @Test
     void type2ReportsItsRowAndScalar() {
-        var scale = new Type2(3, -0.5);
+        var scale = new RowScale(3, -0.5);
         assertEquals(3, scale.targetRow());
         assertEquals(-0.5, scale.scalar(), 0.0);
     }
@@ -64,12 +64,12 @@ class RREFOperationTest {
     void type2RejectsANegativeRow(
         final int row
     ) {
-        assertThrows(IllegalArgumentException.class, () -> new Type2(row, 2));
+        assertThrows(IllegalArgumentException.class, () -> new RowScale(row, 2));
     }
 
     @Test
     void type2RejectsAZeroScalar() {
-        assertThrows(IllegalArgumentException.class, () -> new Type2(0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new RowScale(0, 0));
     }
 
     @ParameterizedTest(name = "scalar {0} is rejected")
@@ -77,26 +77,26 @@ class RREFOperationTest {
     void type2RejectsNonFiniteScalars(
         final double scalar
     ) {
-        assertThrows(IllegalArgumentException.class, () -> new Type2(0, scalar));
+        assertThrows(IllegalArgumentException.class, () -> new RowScale(0, scalar));
     }
 
-    // ---------- Type3: construction ----------
+    // ---------- RowCombine: construction ----------
 
     @Test
     void type3ReportsItsRowsAndScalar() {
-        var combine = new Type3(1, 4, 2.5);
+        var combine = new RowCombine(1, 4, 2.5);
         assertEquals(1, combine.sourceRow());
         assertEquals(4, combine.targetRow());
         assertEquals(2.5, combine.scalar(), 0.0);
     }
 
-    @ParameterizedTest(name = "Type3({0}, {1}) is rejected")
+    @ParameterizedTest(name = "RowCombine({0}, {1}) is rejected")
     @CsvSource({"-1, 0", "0, -1", "-2147483648, 0", "0, -2147483648"})
     void type3RejectsNegativeIndices(
         final int source,
         final int target
     ) {
-        assertThrows(IllegalArgumentException.class, () -> new Type3(source, target, 2));
+        assertThrows(IllegalArgumentException.class, () -> new RowCombine(source, target, 2));
     }
 
     @ParameterizedTest(name = "row {0} as source and target is rejected")
@@ -104,12 +104,12 @@ class RREFOperationTest {
     void type3RejectsTheSameRowAsSourceAndTarget(
         final int row
     ) {
-        assertThrows(IllegalArgumentException.class, () -> new Type3(row, row, 2));
+        assertThrows(IllegalArgumentException.class, () -> new RowCombine(row, row, 2));
     }
 
     @Test
     void type3RejectsAZeroScalar() {
-        assertThrows(IllegalArgumentException.class, () -> new Type3(0, 1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new RowCombine(0, 1, 0));
     }
 
     @ParameterizedTest(name = "scalar {0} is rejected")
@@ -117,14 +117,14 @@ class RREFOperationTest {
     void type3RejectsNonFiniteScalars(
         final double scalar
     ) {
-        assertThrows(IllegalArgumentException.class, () -> new Type3(0, 1, scalar));
+        assertThrows(IllegalArgumentException.class, () -> new RowCombine(0, 1, scalar));
     }
 
     // ---------- all operations: operands ----------
 
     @Test
     void everyOperationLeavesItsOperandUnchangedAndReturnsANewObject() {
-        for (RREFOperation operation : operations()) {
+        for (RowOperation operation : operations()) {
             var matrix = new Matrix(sampleData());
             Matrix changedMatrix = operation.apply(matrix);
             assertNotSame(matrix, changedMatrix);
@@ -139,17 +139,17 @@ class RREFOperationTest {
 
     @Test
     void everyOperationRejectsANullOperand() {
-        for (RREFOperation operation : operations()) {
+        for (RowOperation operation : operations()) {
             assertThrows(NullPointerException.class, () -> operation.apply((Matrix) null));
             assertThrows(NullPointerException.class, () -> operation.apply((Vector) null));
         }
     }
 
-    // ---------- Type1 on a matrix ----------
+    // ---------- RowSwap on a matrix ----------
 
     @Test
     void type1ExchangesTwoRowsAndLeavesTheRest() {
-        Matrix result = new Type1(0, 2).apply(new Matrix(sampleData()));
+        Matrix result = new RowSwap(0, 2).apply(new Matrix(sampleData()));
         assertMatrixEquals(new double[][]{{5, 6}, {3, 4}, {1, 2}}, result);
     }
 
@@ -160,39 +160,39 @@ class RREFOperationTest {
         final int j
     ) {
         var matrix = new Matrix(sampleData());
-        assertMatrixEquals(new Type1(j, i).apply(matrix), new Type1(i, j).apply(matrix));
+        assertMatrixEquals(new RowSwap(j, i).apply(matrix), new RowSwap(i, j).apply(matrix));
     }
 
     @Test
     void type1AppliedTwiceRestoresTheMatrix() {
-        var swap = new Type1(0, 2);
+        var swap = new RowSwap(0, 2);
         Matrix result = swap.apply(swap.apply(new Matrix(sampleData())));
         assertMatrixEquals(sampleData(), result);
     }
 
     @Test
     void type1WithEqualIndicesLeavesTheMatrixUnchanged() {
-        Matrix result = new Type1(1, 1).apply(new Matrix(sampleData()));
+        Matrix result = new RowSwap(1, 1).apply(new Matrix(sampleData()));
         assertMatrixEquals(sampleData(), result);
     }
 
     @Test
     void type1WorksOnASingleRowMatrix() {
-        Matrix result = new Type1(0, 0).apply(new Matrix(new double[][]{{1, 2, 3}}));
+        Matrix result = new RowSwap(0, 0).apply(new Matrix(new double[][]{{1, 2, 3}}));
         assertMatrixEquals(new double[][]{{1, 2, 3}}, result);
     }
 
     @Test
     void type1MovesWholeRowsOfAWideMatrix() {
-        Matrix result = new Type1(0, 1).apply(new Matrix(new double[][]{{1, 2, 3, 4}, {5, 6, 7, 8}}));
+        Matrix result = new RowSwap(0, 1).apply(new Matrix(new double[][]{{1, 2, 3, 4}, {5, 6, 7, 8}}));
         assertMatrixEquals(new double[][]{{5, 6, 7, 8}, {1, 2, 3, 4}}, result);
     }
 
-    // ---------- Type1 on a vector ----------
+    // ---------- RowSwap on a vector ----------
 
     @Test
     void type1ExchangesTwoEntriesAndLeavesTheRest() {
-        Vector result = new Type1(0, 3).apply(vector(1, 2, 3, 4));
+        Vector result = new RowSwap(0, 3).apply(vector(1, 2, 3, 4));
         assertVectorEquals(new double[]{4, 2, 3, 1}, result);
     }
 
@@ -203,24 +203,24 @@ class RREFOperationTest {
         final int j
     ) {
         var v = vector(1, 2, 3, 4);
-        assertVectorEquals(new Type1(j, i).apply(v).data(), new Type1(i, j).apply(v));
+        assertVectorEquals(new RowSwap(j, i).apply(v).data(), new RowSwap(i, j).apply(v));
     }
 
     @Test
     void type1AppliedTwiceRestoresTheVector() {
-        var swap = new Type1(0, 2);
+        var swap = new RowSwap(0, 2);
         Vector result = swap.apply(swap.apply(vector(5, -6, 7)));
         assertVectorEquals(new double[]{5, -6, 7}, result);
     }
 
     @Test
     void type1WithEqualIndicesLeavesTheVectorUnchanged() {
-        assertVectorEquals(new double[]{1, 2, 3}, new Type1(1, 1).apply(vector(1, 2, 3)));
+        assertVectorEquals(new double[]{1, 2, 3}, new RowSwap(1, 1).apply(vector(1, 2, 3)));
     }
 
     @Test
     void type1WorksOnASingleEntryVector() {
-        assertVectorEquals(new double[]{9}, new Type1(0, 0).apply(vector(9)));
+        assertVectorEquals(new double[]{9}, new RowSwap(0, 0).apply(vector(9)));
     }
 
     @Test
@@ -236,26 +236,26 @@ class RREFOperationTest {
             expected[i] = entries[j];
             expected[j] = entries[i];
 
-            assertVectorEquals(expected, new Type1(i, j).apply(new Vector(entries)));
+            assertVectorEquals(expected, new RowSwap(i, j).apply(new Vector(entries)));
         }
     }
 
-    // ---------- Type1: operand fit ----------
+    // ---------- RowSwap: operand fit ----------
 
-    @ParameterizedTest(name = "Type1({0}, {1}) does not fit three rows")
+    @ParameterizedTest(name = "RowSwap({0}, {1}) does not fit three rows")
     @CsvSource({"3, 0", "0, 3", "3, 3", "100, 0", "0, 2147483647"})
     void type1RejectsIndicesBeyondTheOperand(
         final int source,
         final int target
     ) {
-        assertDoesNotFitThreeRows(new Type1(source, target));
+        assertDoesNotFitThreeRows(new RowSwap(source, target));
     }
 
-    // ---------- Type2 on a matrix ----------
+    // ---------- RowScale on a matrix ----------
 
     @Test
     void type2ScalesEveryEntryOfTheTargetRowOnly() {
-        Matrix result = new Type2(1, 5).apply(new Matrix(sampleData()));
+        Matrix result = new RowScale(1, 5).apply(new Matrix(sampleData()));
         assertMatrixEquals(new double[][]{{1, 2}, {15, 20}, {5, 6}}, result);
     }
 
@@ -264,21 +264,21 @@ class RREFOperationTest {
     void type2HandlesNegativeFractionalIdentityAndLargeScalarsOnAMatrix(
         final double scalar
     ) {
-        Matrix result = new Type2(1, scalar).apply(new Matrix(sampleData()));
+        Matrix result = new RowScale(1, scalar).apply(new Matrix(sampleData()));
         assertMatrixEquals(new double[][]{{1, 2}, {3 * scalar, 4 * scalar}, {5, 6}}, result);
     }
 
     @Test
     void type2ByTheReciprocalRestoresTheMatrix() {
-        Matrix scaledUp = new Type2(1, 49).apply(new Matrix(sampleData()));
-        assertMatrixEquals(sampleData(), new Type2(1, 1.0 / 49).apply(scaledUp));
+        Matrix scaledUp = new RowScale(1, 49).apply(new Matrix(sampleData()));
+        assertMatrixEquals(sampleData(), new RowScale(1, 1.0 / 49).apply(scaledUp));
     }
 
-    // ---------- Type2 on a vector ----------
+    // ---------- RowScale on a vector ----------
 
     @Test
     void type2ScalesOnlyTheTargetEntry() {
-        Vector result = new Type2(1, 5).apply(vector(1, 2, 3));
+        Vector result = new RowScale(1, 5).apply(vector(1, 2, 3));
         assertVectorEquals(new double[]{1, 10, 3}, result);
     }
 
@@ -287,14 +287,14 @@ class RREFOperationTest {
     void type2HandlesNegativeFractionalIdentityAndLargeScalarsOnAVector(
         final double scalar
     ) {
-        Vector result = new Type2(2, scalar).apply(vector(4, 8, 12));
+        Vector result = new RowScale(2, scalar).apply(vector(4, 8, 12));
         assertVectorEquals(new double[]{4, 8, 12 * scalar}, result);
     }
 
     @Test
     void type2ByTheReciprocalRestoresTheVector() {
-        Vector scaledUp = new Type2(1, 49).apply(vector(3, 7, -2));
-        assertVectorEquals(new double[]{3, 7, -2}, new Type2(1, 1.0 / 49).apply(scaledUp));
+        Vector scaledUp = new RowScale(1, 49).apply(vector(3, 7, -2));
+        assertVectorEquals(new double[]{3, 7, -2}, new RowScale(1, 1.0 / 49).apply(scaledUp));
     }
 
     @Test
@@ -307,110 +307,110 @@ class RREFOperationTest {
             double first = randomScalar(random);
             double second = randomScalar(random);
 
-            Vector once = new Type2(index, first).apply(new Vector(entries));
-            Vector sequential = new Type2(index, second).apply(once);
-            Vector combined = new Type2(index, first * second).apply(new Vector(entries));
+            Vector once = new RowScale(index, first).apply(new Vector(entries));
+            Vector sequential = new RowScale(index, second).apply(once);
+            Vector combined = new RowScale(index, first * second).apply(new Vector(entries));
             assertVectorEquals(combined.data(), sequential);
         }
     }
 
-    // ---------- Type2: operand fit and overflow ----------
+    // ---------- RowScale: operand fit and overflow ----------
 
     @ParameterizedTest(name = "row {0} does not fit three rows")
     @ValueSource(ints = {3, 100, Integer.MAX_VALUE})
     void type2RejectsARowBeyondTheOperand(
         final int row
     ) {
-        assertDoesNotFitThreeRows(new Type2(row, 2));
+        assertDoesNotFitThreeRows(new RowScale(row, 2));
     }
 
     @Test
     void type2RejectsAResultThatOverflows() {
-        var scale = new Type2(0, 10);
+        var scale = new RowScale(0, 10);
         assertThrows(IllegalStateException.class, () -> scale.apply(vector(1e308)));
         assertThrows(IllegalStateException.class, () -> scale.apply(new Matrix(new double[][]{{1e308}})));
     }
 
-    // ---------- Type3 on a matrix ----------
+    // ---------- RowCombine on a matrix ----------
 
     @Test
     void type3AddsAMultipleOfTheSourceRowToTheTargetRow() {
-        Matrix result = new Type3(0, 2, 3).apply(new Matrix(sampleData())); // row 2 += 3 * row 0
+        Matrix result = new RowCombine(0, 2, 3).apply(new Matrix(sampleData())); // row 2 += 3 * row 0
         assertMatrixEquals(new double[][]{{1, 2}, {3, 4}, {8, 12}}, result);
     }
 
     @Test
     void type3WithANegativeScalarEliminatesTheTargetRow() {
-        Matrix result = new Type3(0, 1, -2).apply(new Matrix(new double[][]{{2, 4}, {4, 8}}));
+        Matrix result = new RowCombine(0, 1, -2).apply(new Matrix(new double[][]{{2, 4}, {4, 8}}));
         assertMatrixEquals(new double[][]{{2, 4}, {0, 0}}, result);
     }
 
     @Test
     void type3WithAFractionalScalarOnAMatrix() {
-        Matrix result = new Type3(0, 1, -0.25).apply(new Matrix(new double[][]{{4, 8}, {1, 2}}));
+        Matrix result = new RowCombine(0, 1, -0.25).apply(new Matrix(new double[][]{{4, 8}, {1, 2}}));
         assertMatrixEquals(new double[][]{{4, 8}, {0, 0}}, result);
     }
 
     @Test
     void type3NeverChangesTheSourceOrOtherRows() {
         var matrix = new Matrix(new double[][]{{1, 2}, {3, 4}, {5, 6}, {7, 8}});
-        Matrix result = new Type3(1, 3, 10).apply(matrix);
+        Matrix result = new RowCombine(1, 3, 10).apply(matrix);
         assertMatrixEquals(new double[][]{{1, 2}, {3, 4}, {5, 6}, {37, 48}}, result);
     }
 
     @Test
     void type3AppliesToEveryColumnOfAWideMatrix() {
-        Matrix result = new Type3(0, 1, -4).apply(new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}));
+        Matrix result = new RowCombine(0, 1, -4).apply(new Matrix(new double[][]{{1, 2, 3}, {4, 5, 6}}));
         assertMatrixEquals(new double[][]{{1, 2, 3}, {0, -3, -6}}, result);
     }
 
     @Test
     void type3IsUndoneByTheNegatedScalarOnAMatrix() {
-        Matrix combined = new Type3(0, 2, 4.5).apply(new Matrix(sampleData()));
-        assertMatrixEquals(sampleData(), new Type3(0, 2, -4.5).apply(combined));
+        Matrix combined = new RowCombine(0, 2, 4.5).apply(new Matrix(sampleData()));
+        assertMatrixEquals(sampleData(), new RowCombine(0, 2, -4.5).apply(combined));
     }
 
     @Test
     void type3WithAZeroSourceRowLeavesTheTargetUnchanged() {
-        Matrix result = new Type3(0, 1, 7).apply(new Matrix(new double[][]{{0, 0}, {3, 4}}));
+        Matrix result = new RowCombine(0, 1, 7).apply(new Matrix(new double[][]{{0, 0}, {3, 4}}));
         assertMatrixEquals(new double[][]{{0, 0}, {3, 4}}, result);
     }
 
-    // ---------- Type3 on a vector ----------
+    // ---------- RowCombine on a vector ----------
 
     @Test
     void type3AddsAMultipleOfTheSourceEntryToTheTargetEntry() {
-        Vector result = new Type3(0, 2, 3).apply(vector(2, 5, 7)); // v[2] += 3 * v[0]
+        Vector result = new RowCombine(0, 2, 3).apply(vector(2, 5, 7)); // v[2] += 3 * v[0]
         assertVectorEquals(new double[]{2, 5, 13}, result);
     }
 
     @Test
     void type3WithANegativeScalarEliminatesTheTargetEntry() {
-        Vector result = new Type3(0, 1, -2).apply(vector(2, 4)); // v[1] += -2 * v[0]
+        Vector result = new RowCombine(0, 1, -2).apply(vector(2, 4)); // v[1] += -2 * v[0]
         assertVectorEquals(new double[]{2, 0}, result);
     }
 
     @Test
     void type3WithAFractionalScalarOnAVector() {
-        Vector result = new Type3(0, 1, -0.25).apply(vector(4, 1));
+        Vector result = new RowCombine(0, 1, -0.25).apply(vector(4, 1));
         assertVectorEquals(new double[]{4, 0}, result);
     }
 
     @Test
     void type3NeverChangesTheSourceOrOtherEntries() {
-        Vector result = new Type3(1, 3, 10).apply(vector(1, 2, 3, 4, 5));
+        Vector result = new RowCombine(1, 3, 10).apply(vector(1, 2, 3, 4, 5));
         assertVectorEquals(new double[]{1, 2, 3, 24, 5}, result);
     }
 
     @Test
     void type3IsUndoneByTheNegatedScalarOnAVector() {
-        Vector combined = new Type3(0, 2, 4.5).apply(vector(3, -1, 8));
-        assertVectorEquals(new double[]{3, -1, 8}, new Type3(0, 2, -4.5).apply(combined));
+        Vector combined = new RowCombine(0, 2, 4.5).apply(vector(3, -1, 8));
+        assertVectorEquals(new double[]{3, -1, 8}, new RowCombine(0, 2, -4.5).apply(combined));
     }
 
     @Test
     void type3WithAZeroSourceEntryLeavesTheTargetUnchanged() {
-        Vector result = new Type3(0, 2, 3).apply(vector(0, 5, 7));
+        Vector result = new RowCombine(0, 2, 3).apply(vector(0, 5, 7));
         assertVectorEquals(new double[]{0, 5, 7}, result);
     }
 
@@ -426,7 +426,7 @@ class RREFOperationTest {
             if (entries[source] == 0 || entries[target] == 0) {
                 continue;
             }
-            var reduction = new Type3(source, target, -entries[target] / entries[source]);
+            var reduction = new RowCombine(source, target, -entries[target] / entries[source]);
             Vector result = reduction.apply(new Vector(entries));
             assertEquals(0.0, result.get(target), TOL, "trial " + trial);
         }
@@ -447,9 +447,9 @@ class RREFOperationTest {
                 continue;
             }
 
-            Vector once = new Type3(source, target, first).apply(new Vector(entries));
-            Vector sequential = new Type3(source, target, second).apply(once);
-            Vector combined = new Type3(source, target, first + second).apply(new Vector(entries));
+            Vector once = new RowCombine(source, target, first).apply(new Vector(entries));
+            Vector sequential = new RowCombine(source, target, second).apply(once);
+            Vector combined = new RowCombine(source, target, first + second).apply(new Vector(entries));
             assertVectorEquals(combined.data(), sequential);
         }
     }
@@ -462,8 +462,8 @@ class RREFOperationTest {
             double[] entries = randomEntries(random, size);
             List<Integer> picks = shuffledIndices(random, size);
             int source = picks.get(0);
-            var first = new Type3(source, picks.get(1), randomScalar(random));
-            var second = new Type3(source, picks.get(2), randomScalar(random));
+            var first = new RowCombine(source, picks.get(1), randomScalar(random));
+            var second = new RowCombine(source, picks.get(2), randomScalar(random));
 
             Vector forward = second.apply(first.apply(new Vector(entries)));
             Vector backward = first.apply(second.apply(new Vector(entries)));
@@ -471,20 +471,20 @@ class RREFOperationTest {
         }
     }
 
-    // ---------- Type3: operand fit and overflow ----------
+    // ---------- RowCombine: operand fit and overflow ----------
 
-    @ParameterizedTest(name = "Type3({0}, {1}) does not fit three rows")
+    @ParameterizedTest(name = "RowCombine({0}, {1}) does not fit three rows")
     @CsvSource({"3, 0", "0, 3", "3, 4", "100, 0", "0, 2147483647"})
     void type3RejectsIndicesBeyondTheOperand(
         final int source,
         final int target
     ) {
-        assertDoesNotFitThreeRows(new Type3(source, target, 2));
+        assertDoesNotFitThreeRows(new RowCombine(source, target, 2));
     }
 
     @Test
     void type3RejectsAResultThatOverflows() {
-        var combine = new Type3(0, 1, 10);
+        var combine = new RowCombine(0, 1, 10);
         assertThrows(IllegalStateException.class, () -> combine.apply(vector(1e308, 1e308)));
         assertThrows(IllegalStateException.class,
             () -> combine.apply(new Matrix(new double[][]{{1e308}, {1e308}})));
@@ -497,10 +497,10 @@ class RREFOperationTest {
     @Test
     void replayingTheRrefOperationsOnBSolvesAx_equals_b() {
         Vector b = vector(3, 5);
-        b = new Type2(0, 0.5).apply(b);
-        b = new Type3(0, 1, -1).apply(b);
-        b = new Type2(1, 0.4).apply(b);
-        b = new Type3(1, 0, -0.5).apply(b);
+        b = new RowScale(0, 0.5).apply(b);
+        b = new RowCombine(0, 1, -1).apply(b);
+        b = new RowScale(1, 0.4).apply(b);
+        b = new RowCombine(1, 0, -0.5).apply(b);
 
         assertVectorEquals(new double[]{0.8, 1.4}, b);
         assertEquals(3, 2 * b.get(0) + 1 * b.get(1), 1e-9); // row 1 of A * x
@@ -514,7 +514,7 @@ class RREFOperationTest {
         for (int trial = 0; trial < 200; trial++) {
             int size = 2 + random.nextInt(5);
             double[] entries = randomEntries(random, size);
-            RREFOperation operation = randomOperation(random, size);
+            RowOperation operation = randomOperation(random, size);
 
             Vector changed = operation.apply(new Vector(entries));
             assertVectorEquals(entries, inverseOf(operation).apply(changed));
@@ -524,13 +524,13 @@ class RREFOperationTest {
     // ---------- helpers ----------
 
     // One operation of each type, all valid for a matrix with three rows and a vector with three entries.
-    private static List<RREFOperation> operations() {
-        return List.of(new Type1(0, 2), new Type2(1, 3), new Type3(0, 2, -2));
+    private static List<RowOperation> operations() {
+        return List.of(new RowSwap(0, 2), new RowScale(1, 3), new RowCombine(0, 2, -2));
     }
 
     // Asserts that both a three-row matrix and a three-entry vector reject the operation and stay unchanged.
     private static void assertDoesNotFitThreeRows(
-        final RREFOperation operation
+        final RowOperation operation
     ) {
         var matrix = new Matrix(sampleData());
         var v = vector(1, 2, 3);
@@ -540,7 +540,7 @@ class RREFOperationTest {
         assertVectorEquals(new double[]{1, 2, 3}, v);
     }
 
-    private static RREFOperation randomOperation(
+    private static RowOperation randomOperation(
         final Random random,
         final int n
     ) {
@@ -548,21 +548,21 @@ class RREFOperationTest {
         int i = random.nextInt(n);
         int j = (i + 1 + random.nextInt(n - 1)) % n; // always different from i
         return switch (random.nextInt(3)) {
-            case 0 -> new Type1(i, j);
-            case 1 -> new Type2(i, scalar);
-            default -> new Type3(i, j, scalar);
+            case 0 -> new RowSwap(i, j);
+            case 1 -> new RowScale(i, scalar);
+            default -> new RowCombine(i, j, scalar);
         };
     }
 
-    private static RREFOperation inverseOf(
-        final RREFOperation operation
+    private static RowOperation inverseOf(
+        final RowOperation operation
     ) {
-        if (operation instanceof Type1 swap) {
+        if (operation instanceof RowSwap swap) {
             return swap; // a swap is its own inverse
-        } else if (operation instanceof Type2 scale) {
-            return new Type2(scale.targetRow(), 1.0 / scale.scalar());
+        } else if (operation instanceof RowScale scale) {
+            return new RowScale(scale.targetRow(), 1.0 / scale.scalar());
         }
-        Type3 reduce = (Type3) operation;
-        return new Type3(reduce.sourceRow(), reduce.targetRow(), -reduce.scalar());
+        RowCombine reduce = (RowCombine) operation;
+        return new RowCombine(reduce.sourceRow(), reduce.targetRow(), -reduce.scalar());
     }
 }

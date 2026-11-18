@@ -11,53 +11,39 @@ import linearAlgebra.domain.Vector;
  * @param targetRow the zero-based index of the row to scale
  * @param scalar    the nonzero, finite {@code scalar}
  */
-public record Type2(
+public record RowScale(
     int targetRow,
     double scalar
-) implements RREFOperation {
+) implements RowOperation {
 
     /**
-     * Creates the operation.
+     * Creates the scaling {@link RowOperation}.
      *
      * @param targetRow the zero-based index of the row to scale
      * @param scalar    the nonzero, finite {@code scalar}
      */
-    public Type2(
-        final int targetRow,
-        final double scalar
-    ) {
-        this.targetRow = targetRow;
-        this.scalar = scalar;
-
-        checkType2();
+    public RowScale {
+        checkRowScale(targetRow, scalar);
     }
 
     /**
-     * Returns the index of the row to scale.
-     *
-     * @return the zero-based row index
+     * @return the zero-based index of the row to scale
      */
     @Override
     public int targetRow() {
-        checkType2();
-
         return targetRow;
     }
 
     /**
-     * Returns the {@code scalar}.
-     *
      * @return the nonzero, finite {@code scalar}
      */
     @Override
     public double scalar() {
-        checkType2();
-
         return scalar;
     }
 
     /**
-     * Multiplies the row of a {@link Matrix} by the {@code scalar}.
+     * Multiplies the entire {@code targetRow} of a {@link Matrix} by the {@code scalar}.
      *
      * @param A the {@link Matrix} to operate on
      * @return a new {@link Matrix} with the row scaled; {@code A} is unchanged
@@ -68,15 +54,14 @@ public record Type2(
     ) {
         Preconditions.checkNotNull(
             A,
-            "Type2.apply: matrix must not be null"
+            "RowScale.apply: matrix must not be null"
         );
-        checkType2();
 
         return RowReducer.apply(this, A);
     }
 
     /**
-     * Multiplies the entry of a {@link Vector} at the same index by the {@code scalar}.
+     * Multiplies the {@code targetRow} entry of a {@link Vector} by the {@code scalar}.
      *
      * @param v the {@link Vector} to operate on
      * @return a new {@link Vector} with the entry scaled; {@code v} is unchanged
@@ -87,27 +72,29 @@ public record Type2(
     ) {
         Preconditions.checkNotNull(
             v,
-            "Type2.apply: vector must not be null"
+            "RowScale.apply: vector must not be null"
         );
-        checkType2();
 
         return RowReducer.apply(this, v);
     }
 
     // Checks that the index is non-negative and the scalar is nonzero and finite.
-    private void checkType2() {
-        Preconditions.checkState(
+    private static void checkRowScale(
+        int targetRow,
+        double scalar
+    ) {
+        Preconditions.checkArgument(
             targetRow >= 0,
-            "Type2: target row index must be non-negative: %s",
+            "RowScale: target row index must be non-negative: %s",
             targetRow
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             Double.isFinite(scalar),
-            "Type2: scalar must be finite"
+            "RowScale: scalar must be finite"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             scalar != 0,
-            "Type2: scalar must be non-zero"
+            "RowScale: scalar must be non-zero"
         );
     }
 }

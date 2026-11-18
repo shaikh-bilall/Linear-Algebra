@@ -13,65 +13,45 @@ import linearAlgebra.domain.Vector;
  * @param targetRow the zero-based index of the row that receives the {@code scalar} multiple
  * @param scalar    the nonzero, finite {@code scalar} multiple
  */
-public record Type3(
+public record RowCombine(
     int sourceRow,
     int targetRow,
     double scalar
-) implements RREFOperation {
+) implements RowOperation {
 
     /**
-     * Creates the operation.
+     * Creates the linear combination {@link RowOperation}.
      *
      * @param sourceRow the zero-based index of the row whose {@code scalar} multiple is added
      * @param targetRow the zero-based index of the row that receives the {@code scalar} multiple;
      *                  it must differ from {@code sourceRow}
      * @param scalar    the nonzero, finite {@code scalar} multiple
      */
-    public Type3(
-        final int sourceRow,
-        final int targetRow,
-        final double scalar
-    ) {
-        this.sourceRow = sourceRow;
-        this.targetRow = targetRow;
-        this.scalar = scalar;
-
-        checkType3();
+    public RowCombine {
+        checkRowCombine(sourceRow, targetRow, scalar);
     }
 
     /**
-     * Returns the index of the row whose {@code scalar} multiple is added.
-     *
-     * @return the zero-based row index
+     * @return the zero-based index of the row whose {@code scalar} multiple is added
      */
     @Override
     public int sourceRow() {
-        checkType3();
-
         return sourceRow;
     }
 
     /**
-     * Returns the index of the row that receives the {@code scalar} multiple.
-     *
-     * @return the zero-based row index
+     * @return the zero-based index of the row that receives the {@code scalar} multiple
      */
     @Override
     public int targetRow() {
-        checkType3();
-
         return targetRow;
     }
 
     /**
-     * Returns the {@code scalar} multiple.
-     *
      * @return the nonzero, finite {@code scalar} multiple
      */
     @Override
     public double scalar() {
-        checkType3();
-
         return scalar;
     }
 
@@ -87,9 +67,8 @@ public record Type3(
     ) {
         Preconditions.checkNotNull(
             A,
-            "Type3.apply: matrix must not be null"
+            "RowCombine.apply: matrix must not be null"
         );
-        checkType3();
 
         return RowReducer.apply(this, A);
     }
@@ -106,37 +85,40 @@ public record Type3(
     ) {
         Preconditions.checkNotNull(
             v,
-            "Type3.apply: vector must not be null"
+            "RowCombine.apply: vector must not be null"
         );
-        checkType3();
 
         return RowReducer.apply(this, v);
     }
 
     // Checks that the indices are non-negative and different, and the scalar is nonzero and finite.
-    private void checkType3() {
-        Preconditions.checkState(
+    private static void checkRowCombine(
+        int sourceRow,
+        int targetRow,
+        double scalar
+    ) {
+        Preconditions.checkArgument(
             sourceRow >= 0,
-            "Type3: source row index must be non-negative: %s",
+            "RowCombine: source row index must be non-negative: %s",
             sourceRow
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             targetRow >= 0,
-            "Type3: target row index must be non-negative: %s",
+            "RowCombine: target row index must be non-negative: %s",
             targetRow
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             sourceRow != targetRow,
-            "Type3: source and target rows must differ: %s",
+            "RowCombine: source and target rows must differ: %s",
             sourceRow
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             Double.isFinite(scalar),
-            "Type3: scalar must be finite"
+            "RowCombine: scalar must be finite"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             scalar != 0,
-            "Type3: scalar must be non-zero"
+            "RowCombine: scalar must be non-zero"
         );
     }
 }

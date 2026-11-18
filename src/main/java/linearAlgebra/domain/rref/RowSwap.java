@@ -11,48 +11,34 @@ import linearAlgebra.domain.Vector;
  * @param sourceRow the zero-based index of one of the rows
  * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
  */
-public record Type1(
+public record RowSwap(
     int sourceRow,
     int targetRow
-) implements RREFOperation {
+) implements RowOperation {
 
     /**
-     * Creates the operation.
+     * Creates the swap {@link RowOperation}.
      *
      * @param sourceRow the zero-based index of one of the rows
      * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
      */
-    public Type1(
-        final int sourceRow,
-        final int targetRow
-    ) {
-        this.sourceRow = sourceRow;
-        this.targetRow = targetRow;
-
-        checkType1();
+    public RowSwap {
+        checkRowSwap(sourceRow, targetRow);
     }
 
     /**
-     * Returns the index of one of the swapped rows.
-     *
-     * @return the zero-based row index
+     * @return the zero-based index of the first row to swap
      */
     @Override
     public int sourceRow() {
-        checkType1();
-
         return sourceRow;
     }
 
     /**
-     * Returns the index of the other swapped row.
-     *
-     * @return the zero-based row index
+     * @return the zero-based index of the second row to swap
      */
     @Override
     public int targetRow() {
-        checkType1();
-
         return targetRow;
     }
 
@@ -68,9 +54,8 @@ public record Type1(
     ) {
         Preconditions.checkNotNull(
             A,
-            "Type1.apply: matrix must not be null"
+            "RowSwap.apply: matrix must not be null"
         );
-        checkType1();
 
         return RowReducer.apply(this, A);
     }
@@ -87,23 +72,25 @@ public record Type1(
     ) {
         Preconditions.checkNotNull(
             v,
-            "Type1.apply: vector must not be null"
+            "RowSwap.apply: vector must not be null"
         );
-        checkType1();
 
         return RowReducer.apply(this, v);
     }
 
     // Checks that both indices are non-negative.
-    private void checkType1() {
-        Preconditions.checkState(
+    private static void checkRowSwap(
+        int sourceRow,
+        int targetRow
+    ) {
+        Preconditions.checkArgument(
             sourceRow >= 0,
-            "Type1: source row index must be non-negative: %s",
+            "RowSwap: source row index must be non-negative: %s",
             sourceRow
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             targetRow >= 0,
-            "Type1: target row index must be non-negative: %s",
+            "RowSwap: target row index must be non-negative: %s",
             targetRow
         );
     }

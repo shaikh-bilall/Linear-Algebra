@@ -1,14 +1,11 @@
 package linearAlgebra.logic;
 
 import com.google.common.base.Preconditions;
-import linearAlgebra.domain.rref.Reduction;
+import linearAlgebra.domain.rref.*;
 import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
-import linearAlgebra.domain.rref.RowReducer;
-import linearAlgebra.domain.rref.Type1;
-import linearAlgebra.domain.rref.Type2;
 
 /**
  * Linear-algebra operations on a fixed matrix: product, reduced row echelon form, determinant and
@@ -145,12 +142,12 @@ public final class MatrixLogic {
             }
         }
 
-        // Type1 flips the sign, Type2 divides by its scalar, and Type3 leaves the determinant unchanged.
+        // RowSwap flips the sign, RowScale divides by its scalar, and RowCombine leaves the determinant unchanged.
         double determinant = 1;
         for (var operation : reduction.operations()) {
-            if (operation instanceof Type1) {
+            if (operation instanceof RowSwap) {
                 determinant = -determinant;
-            } else if (operation instanceof Type2 scale) {
+            } else if (operation instanceof RowScale scale) {
                 determinant /= scale.scalar();
             }
         }

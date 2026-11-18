@@ -1,12 +1,12 @@
 package linearAlgebra.logic;
 
+import linearAlgebra.domain.rref.RowCombine;
+import linearAlgebra.domain.rref.RowSwap;
 import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
-import linearAlgebra.domain.rref.Type1;
-import linearAlgebra.domain.rref.Type2;
-import linearAlgebra.domain.rref.Type3;
+import linearAlgebra.domain.rref.RowScale;
 import linearAlgebra.domain.Vector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -362,7 +362,7 @@ class MatrixLogicTest {
         for (int trial = 0; trial < 300; trial++) {
             int rows = 1 + random.nextInt(5);
             var original = new Matrix(randomData(random, rows, 1 + random.nextInt(5), 5));
-            Matrix scaled = new Type2(random.nextInt(rows), randomScalar(random)).apply(original);
+            Matrix scaled = new RowScale(random.nextInt(rows), randomScalar(random)).apply(original);
             assertMatrixEquals(new MatrixLogic(original).rref(), new MatrixLogic(scaled).rref(), LOOSE_TOL);
         }
     }
@@ -373,7 +373,7 @@ class MatrixLogicTest {
             int rows = 2 + random.nextInt(4);
             var original = new Matrix(randomData(random, rows, 1 + random.nextInt(5), 5));
             List<Integer> picks = shuffledIndices(random, rows);
-            var type3 = new Type3(picks.get(0), picks.get(1), randomScalar(random));
+            var type3 = new RowCombine(picks.get(0), picks.get(1), randomScalar(random));
             Matrix combined = type3.apply(original);
             assertMatrixEquals(new MatrixLogic(original).rref(), new MatrixLogic(combined).rref(), LOOSE_TOL);
         }
@@ -505,7 +505,7 @@ class MatrixLogicTest {
             int n = 2 + random.nextInt(4);
             double[][] data = randomData(random, n, n, 5);
             List<Integer> picks = shuffledIndices(random, n);
-            Matrix swapped = new Type1(picks.get(0), picks.get(1)).apply(new Matrix(data));
+            Matrix swapped = new RowSwap(picks.get(0), picks.get(1)).apply(new Matrix(data));
             assertDeterminantEquals(-laplaceDeterminant(data), new MatrixLogic(swapped).determinant(),
                 "Wrong determinant after a swap in " + Arrays.deepToString(data));
         }
@@ -519,7 +519,7 @@ class MatrixLogicTest {
             int n = 1 + random.nextInt(5);
             double[][] data = randomData(random, n, n, 5);
             double factor = randomScalar(random);
-            Matrix scaled = new Type2(random.nextInt(n), factor).apply(new Matrix(data));
+            Matrix scaled = new RowScale(random.nextInt(n), factor).apply(new Matrix(data));
             assertDeterminantEquals(factor * laplaceDeterminant(data), new MatrixLogic(scaled).determinant(),
                 "Wrong determinant after scaling a row of " + Arrays.deepToString(data));
         }
@@ -533,7 +533,7 @@ class MatrixLogicTest {
             int n = 2 + random.nextInt(4);
             double[][] data = randomData(random, n, n, 5);
             List<Integer> picks = shuffledIndices(random, n);
-            var type3 = new Type3(picks.get(0), picks.get(1), randomScalar(random));
+            var type3 = new RowCombine(picks.get(0), picks.get(1), randomScalar(random));
             Matrix combined = type3.apply(new Matrix(data));
             assertDeterminantEquals(laplaceDeterminant(data), new MatrixLogic(combined).determinant(),
                 "Wrong determinant after a row combination in " + Arrays.deepToString(data));

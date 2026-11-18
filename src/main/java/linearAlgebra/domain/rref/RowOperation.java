@@ -6,23 +6,23 @@ import linearAlgebra.domain.Vector;
 /**
  * An elementary row operation that can be applied consistently to a {@link Matrix} or a {@link Vector}.
  */
-public interface RREFOperation {
+public interface RowOperation {
 
     /**
-     * Applies the operation to the rows of a {@link Matrix} and leaves the {@link Matrix} unchanged.
+     * Applies the operation to the rows of a {@link Matrix}.
      *
      * @param A the {@link Matrix} to operate on
-     * @return the resulting {@link Matrix}
+     * @return a {@link Matrix} with the operation applied; {@code A} is unchanged
      */
     Matrix apply(
         final Matrix A
     );
 
     /**
-     * Applies the operation to the entries of a {@link Vector} and leaves the {@link Vector} unchanged.
+     * Applies the operation to the entries of a {@link Vector}.
      *
      * @param v the {@link Vector} to operate on
-     * @return the resulting {@link Vector}
+     * @return a {@link Vector} with the operation applied; {@code v} is unchanged
      */
     Vector apply(
         final Vector v
