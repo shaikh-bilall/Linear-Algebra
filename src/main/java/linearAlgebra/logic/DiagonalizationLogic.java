@@ -402,7 +402,7 @@ public final class DiagonalizationLogic {
     ) {
         final Vector unit = v.scale(1 / v.norm());
         int largest = 0;
-        for (int i = 1; i < unit.length(); i++) {
+        for (int i = 1; i < unit.dimension(); i++) {
             if (Math.abs(unit.get(i)) > Math.abs(unit.get(largest)) * (1 + SIGN_TIE_TOLERANCE)) {
                 largest = i;
             }

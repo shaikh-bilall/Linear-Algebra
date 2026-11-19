@@ -9,47 +9,44 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * A vector of finite real numbers, with basic arithmetic: addition, scaling, dot product and length. It
- * can be
- * iterated over entry by entry.
+ * A vector of finite real numbers.
+ * This class stores an immutable copy of the data and does not allow any modifications.
  *
- * @param data the entries in order; {@code data()} returns a copy of this array
+ * @param data the entries in order
  */
-public record Vector(double[] data) implements Iterable<Double> {
+public record Vector(
+    double[] data
+) implements Iterable<Double> {
 
     /**
-     * Creates a vector from the given entries.
+     * Stores a vector from the given data.
      *
-     * @param data the entries in order
+     * @param data the entries
      */
     public Vector(
         final double[] data
     ) {
-        this.data = data.clone();
+        checkVector(data);
 
-        checkVector();
+        this.data = data.clone();
     }
 
     /**
-     * Creates a zero vector.
+     * Creates a vector of ones.
      *
-     * @param size the number of entries, which must be positive
+     * @param size the number of entries
      */
     public Vector(
         final int size
     ) {
-        this(zeros(size));
+        this(ones(size));
     }
 
     /**
-     * Returns the entries in order.
-     *
-     * @return a copy of the entries; changing it does not affect this vector
+     * @return the entries of this vector
      */
     @Override
     public double[] data() {
-        checkVector();
-
         return data.clone();
     }
 
@@ -62,19 +59,22 @@ public record Vector(double[] data) implements Iterable<Double> {
     public Vector add(
         final Vector other
     ) {
-        checkVector();
-        checkOtherVector(
+        Preconditions.checkNotNull(
             other,
-            "Vector.add"
+            "Vector.add: other vector must not be null"
+        );
+        Preconditions.checkArgument(
+            this.dimension() == other.dimension(),
+            "Vector.add: dimensions must match for both vectors"
         );
 
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
             result[i] += other.data[i];
+
             Preconditions.checkState(
                 Double.isFinite(result[i]),
-                "Vector.add: sum entry must be finite: index %s",
-                i
+                "Vector.add: sum entry must be finite"
             );
         }
         return new Vector(result);
@@ -89,27 +89,25 @@ public record Vector(double[] data) implements Iterable<Double> {
     public Vector scale(
         final double scalar
     ) {
-        checkVector();
         Preconditions.checkArgument(
             Double.isFinite(scalar),
-            "Vector.scale: scalar must be finite: %s",
-            scalar
+            "Vector.scale: scalar must be finite"
         );
 
         double[] result = data.clone();
         for (int i = 0; i < data.length; i++) {
             result[i] *= scalar;
+
             Preconditions.checkState(
                 Double.isFinite(result[i]),
-                "Vector.scale: product entry must be finite: index %s",
-                i
+                "Vector.scale: product entry must be finite"
             );
         }
         return new Vector(result);
     }
 
     /**
-     * Returns the dot product of this vector and another of the same length.
+     * Returns the dot product of this vector and another one.
      *
      * @param other the vector to take the dot product with
      * @return the dot product
@@ -117,34 +115,35 @@ public record Vector(double[] data) implements Iterable<Double> {
     public double dot(
         final Vector other
     ) {
-        checkVector();
-        checkOtherVector(
+        Preconditions.checkNotNull(
             other,
-            "Vector.dot"
+            "Vector.dot: other vector must not be null"
+        );
+        Preconditions.checkArgument(
+          this.dimension() == other.dimension(),
+          "Vector.dot: dimensions must match for both vectors"
         );
 
         double result = 0;
         for (int i = 0; i < data.length; i++) {
             result += this.data[i] * other.data[i];
         }
+
         Preconditions.checkState(
             Double.isFinite(result),
             "Vector.dot: dot product must be finite"
         );
+
         return result;
     }
 
     /**
-     * Returns the Euclidean length of this vector.
-     *
-     * @return the length, never negative
+     * @return the Euclidean length of this vector
      */
     public double norm() {
-        checkVector();
-
         double norm = 0;
         for (double v : data) {
-            norm = Math.hypot(norm, v); // hypot avoids overflowing on the intermediate squares
+            norm = Math.hypot(norm, v);
         }
         Preconditions.checkState(
             Double.isFinite(norm),
@@ -154,16 +153,14 @@ public record Vector(double[] data) implements Iterable<Double> {
     }
 
     /**
-     * Reorders the entries: entry {@code i} of the result is entry {@code shuffledIndices.get(i)} of
-     * this vector.
+     * Reorders the entries according to the given specification.
      *
-     * @param shuffledIndices each index from {@code 0} to {@code length() - 1}, exactly once
-     * @return a new vector with the entries reordered
+     * @param shuffledIndices a permutation of the indices
+     * @return a new vector with the reordered entries
      */
     public Vector permute(
         final List<Integer> shuffledIndices
     ) {
-        checkVector();
         Permutations.checkPermutation(
             shuffledIndices,
             data.length,
@@ -178,46 +175,36 @@ public record Vector(double[] data) implements Iterable<Double> {
     }
 
     /**
-     * Returns a single entry.
+     * Returns the entry at the specified index.
      *
-     * @param index the zero-based position
-     * @return the entry at that position
+     * @param index the zero-based index
+     * @return the entry at that index
      */
     public double get(
         final int index
     ) {
-        checkVector();
-        Preconditions.checkArgument(
-            index >= 0 &&
-            index < data.length,
-            "Vector.get: index out of bounds: %s",
-            index
+        Preconditions.checkElementIndex(
+            index,
+            data.length,
+            "Vector.get: index"
         );
 
         return data[index];
     }
 
     /**
-     * Returns the number of entries.
-     *
-     * @return the length
+     * @return the number of entries.
      */
-    public int length() {
-        checkVector();
-
+    public int dimension() {
         return data.length;
     }
 
     /**
-     * Iterates over the entries in order.
-     *
-     * @return an iterator over the entries
+     * @return an {@link Iterator} over the entries
      */
     @Override
     @NonNull
     public Iterator<Double> iterator() {
-        checkVector();
-
         return new Iterator<>() {
             private int currentIndex = 0;
 
@@ -243,28 +230,23 @@ public record Vector(double[] data) implements Iterable<Double> {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
+
                 return data[currentIndex++];
             }
         };
     }
 
     /**
-     * Returns a new vector that is a copy of this one.
-     *
      * @return a new vector with the same entries
      */
     public Vector copy() {
-        checkVector();
-
         return new Vector(data);
     }
 
     /**
-     * Compares this vector to another object for equality, entry by entry. Two vectors are equal when
-     * they have the
-     * same length and every pair of matching entries is numerically equal, so {@code 0.0} and {@code
-     * -0.0} count as
-     * the same entry.
+     * Compares this vector to another object for equality, entry by entry.
+     * Two vectors are equal when they have the same length and
+     * every pair of matching entries is numerically equal.
      *
      * @param otherObject the object to compare with
      * @return {@code true} if {@code otherObject} is a vector with the same length and entries
@@ -273,39 +255,33 @@ public record Vector(double[] data) implements Iterable<Double> {
     public boolean equals(
         final Object otherObject
     ) {
-        checkVector();
-
         boolean equals;
         if (!(otherObject instanceof Vector otherVector)) {
             equals = false;
         } else {
-            otherVector.checkVector();
-            equals = entriesEqual(data, otherVector.data);
+            equals = entriesEqual(
+                data,
+                otherVector.data
+            );
         }
         return equals;
     }
 
     /**
-     * Returns a hash code that agrees with {@link #equals}: vectors that are equal have the same hash
-     * code.
-     *
-     * @return the hash code of the entries
+     * @return the hash code that agrees with {@link #equals}
      */
     @Override
     public int hashCode() {
-        checkVector();
-
         return entriesHashCode(data);
     }
 
     /**
-     * Tells whether two arrays have the same length and numerically equal entries, so {@code 0.0} equals
-     * {@code -0.0}.
+     * Tells whether two arrays have the same length and numerically equal entries.
      *
      * @param first  the first array
      * @param second the second array
-     * @return {@code true} if the arrays have the same length and every pair of matching entries is
-     * equal
+     * @return {@code true} if the arrays have the same length and
+     * all pairs of matching entries are equal
      */
     public static boolean entriesEqual(
         final double[] first,
@@ -333,9 +309,7 @@ public record Vector(double[] data) implements Iterable<Double> {
     }
 
     /**
-     * Returns a hash code of the entries of an array that agrees with {@link #entriesEqual}, so {@code
-     * 0.0} and
-     * {@code -0.0} give the same hash code.
+     * Returns a hash code of the entries of an array that agrees with {@link #entriesEqual}.
      *
      * @param entries the array to hash
      * @return the hash code
@@ -364,55 +338,36 @@ public record Vector(double[] data) implements Iterable<Double> {
         return normalizedEntries;
     }
 
-    // Checks that the other vector exists and has the same length as this one.
-    private void checkOtherVector(
-        final Vector other,
-        final String owner
-    ) {
-        Preconditions.checkNotNull(
-            other,
-            "%s: other vector must not be null",
-            owner
-        );
-        Preconditions.checkArgument(
-            other.length() == this.length(),
-            "%s: vectors must have the same length: %s != %s",
-            owner,
-            other.length(),
-            this.length()
-        );
-        Preconditions.checkArgument(
-            Arrays.stream(data).allMatch(Double::isFinite),
-            "%s: all entries must be finite numbers",
-            owner
-        );
-    }
-
     // Checks the cheap structural invariants: the data exists and has at least one entry.
-    private void checkVector() {
+    private static void checkVector(
+        final double[] data
+    ) {
         Preconditions.checkNotNull(
             data,
             "Vector: data must not be null"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             data.length > 0,
             "Vector: vector must have at least one element"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             Arrays.stream(data).allMatch(Double::isFinite),
             "Vector: all entries must be finite numbers"
         );
     }
 
-    // Returns a new array of the given size, filled with zeros.
-    private static double[] zeros(
+    // Returns a new array of the given size, filled with ones.
+    private static double[] ones(
         final int size
     ) {
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             size > 0,
-            "Vector: size must be positive: %s",
-            size
+            "Vector: size must be positive"
         );
-        return new double[size];
+
+        final double[] ones = new double[size];
+        Arrays.fill(ones, 1);
+
+        return ones;
     }
 }

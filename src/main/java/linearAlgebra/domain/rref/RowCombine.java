@@ -7,6 +7,7 @@ import linearAlgebra.domain.Vector;
 
 /**
  * The elementary operation that adds a {@code scalar} multiple of one row to another row.
+ * This class stores an immutable copy of the data and does not allow any modifications.
  *
  * @param sourceRow the zero-based index of the row whose {@code scalar} multiple is added;
  *                  it is left unchanged
@@ -20,7 +21,7 @@ public record RowCombine(
 ) implements RowOperation {
 
     /**
-     * Creates the linear combination {@link RowOperation}.
+     * Stores the linear combination {@link RowOperation}.
      *
      * @param sourceRow the zero-based index of the row whose {@code scalar} multiple is added
      * @param targetRow the zero-based index of the row that receives the {@code scalar} multiple;
@@ -53,6 +54,13 @@ public record RowCombine(
     @Override
     public double scalar() {
         return scalar;
+    }
+
+    /**
+     * @return a new linear combination {@link RowOperation} with the same indices and scalar
+     */
+    public RowCombine copy() {
+        return new RowCombine(sourceRow, targetRow, scalar);
     }
 
     /**
@@ -93,24 +101,21 @@ public record RowCombine(
 
     // Checks that the indices are non-negative and different, and the scalar is nonzero and finite.
     private static void checkRowCombine(
-        int sourceRow,
-        int targetRow,
-        double scalar
+        final int sourceRow,
+        final int targetRow,
+        final double scalar
     ) {
         Preconditions.checkArgument(
             sourceRow >= 0,
-            "RowCombine: source row index must be non-negative: %s",
-            sourceRow
+            "RowCombine: source row index must be non-negative"
         );
         Preconditions.checkArgument(
             targetRow >= 0,
-            "RowCombine: target row index must be non-negative: %s",
-            targetRow
+            "RowCombine: target row index must be non-negative"
         );
         Preconditions.checkArgument(
             sourceRow != targetRow,
-            "RowCombine: source and target rows must differ: %s",
-            sourceRow
+            "RowCombine: source and target rows must differ"
         );
         Preconditions.checkArgument(
             Double.isFinite(scalar),

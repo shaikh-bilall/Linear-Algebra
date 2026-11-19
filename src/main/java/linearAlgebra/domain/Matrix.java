@@ -8,76 +8,40 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A rectangular matrix of finite real numbers, with structural operations such as transpose, merge and
- * row reordering.
+ * A rectangular matrix of finite real number.
+ * This class stores an immutable copy of the data and does not allow any modifications.
  *
- * @param data the entries, indexed as {@code data[row][column]}; {@code data()} returns a copy of this
- * array
+ * @param data entries of the matrix
  */
-public record Matrix(double[][] data) {
+public record Matrix(
+    double[][] data
+) {
 
     /**
-     * Creates a matrix from the given entries.
+     * Stores a matrix for the given data.
      *
-     * @param data the entries, indexed as {@code data[row][column]}
+     * @param data entries of the matrix
      */
     public Matrix(
         final double[][] data
     ) {
-        this.data = new double[data.length][];
-        for (int i = 0; i < data.length; i++) {
-            this.data[i] = data[i].clone();
-        }
+        checkMatrix(data);
 
-        checkMatrix();
+        this.data = deepCopy(data);
     }
 
     /**
-     * Returns the entries.
-     *
-     * @return a deep copy of the entries; changing it does not affect this matrix
+     * @return the entries of this matrix
      */
     @Override
     public double[][] data() {
-        checkMatrix();
-
-        double[][] copy = new double[data.length][];
-        for (int i = 0; i < data.length; i++) {
-            copy[i] = data[i].clone();
-        }
-        return copy;
+        return deepCopy(this.data);
     }
 
     /**
-     * Returns the identity matrix of the given dimension.
-     *
-     * @param dimension the number of rows and columns, which must be positive
-     * @return the identity matrix
-     */
-    public static Matrix identity(
-        final int dimension
-    ) {
-        Preconditions.checkArgument(
-            dimension > 0,
-            "Matrix.identity: dimension must be positive: %s",
-            dimension
-        );
-
-        double[][] identityData = new double[dimension][dimension];
-        for (int i = 0; i < dimension; i++) {
-            identityData[i][i] = 1;
-        }
-        return new Matrix(identityData);
-    }
-
-    /**
-     * Returns the largest absolute value among the entries.
-     *
-     * @return the largest absolute value of any entry, never negative
+     * @return the largest absolute value among the entries
      */
     public double maxAbs() {
-        checkMatrix();
-
         double maxAbs = 0;
         for (double[] row : data) {
             for (double entry : row) {
@@ -88,15 +52,11 @@ public record Matrix(double[][] data) {
     }
 
     /**
-     * Returns the transpose, with rows and columns swapped.
-     *
-     * @return a new matrix; this one is unchanged
+     * @return the transpose, with rows and columns flipped
      */
     public Matrix transpose() {
-        checkMatrix();
-
-        final int rows = data.length;
-        final int cols = data[0].length;
+        final int rows = rows();
+        final int cols = cols();
         double[][] transposedData = new double[cols][rows];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -107,187 +67,160 @@ public record Matrix(double[][] data) {
     }
 
     /**
-     * Multiplies this matrix by a vector, giving one entry per row.
+     * Multiplies this matrix by a {@link Vector}, giving one entry per row.
      *
-     * @param vector the vector to multiply, whose length must equal the number of columns
-     * @return the product of this matrix and {@code vector}
-     * @throws MatrixMultiplyDimMismatchException if the length of {@code vector} differs from the number
+     * @param v the {@link Vector} to multiply, whose length must equal the number of columns
+     * @return the product of this matrix and {@link Vector}
+     * @throws MatrixMultiplyDimMismatchException if the length of {@link Vector} differs from the number
      * of columns
      */
     public Vector multiply(
-        final Vector vector
+        final Vector v
     )
         throws MatrixMultiplyDimMismatchException
     {
-        checkMatrix();
         Preconditions.checkNotNull(
-            vector,
-            "Matrix.multiply: vector must not be null"
+            v,
+            "Matrix.multiply: v must not be null"
         );
-        if (data[0].length != vector.length()) {
+        if (cols() != v.dimension()) {
             throw new MatrixMultiplyDimMismatchException();
         }
 
-        double[] resultData = new double[data.length];
-        for (int i = 0; i < data.length; i++) {
+        double[] resultData = new double[rows()];
+        for (int i = 0; i < rows(); i++) {
             double sum = 0;
-            for (int j = 0; j < data[0].length; j++) {
-                sum += data[i][j] * vector.get(j);
+            for (int j = 0; j < cols(); j++) {
+                sum += data[i][j] * v.get(j);
             }
+
             Preconditions.checkState(
                 Double.isFinite(sum),
-                "Matrix.multiply: product entry must be finite: row %s",
-                i
+                "Matrix.multiply: product entry must be finite"
             );
+
             resultData[i] = sum;
         }
         return new Vector(resultData);
     }
 
     /**
-     * Places another matrix to the right of this one, as when forming an augmented matrix {@code [A |
-     * b]}.
+     * Places another matrix to the right of this one,
+     * as when forming an augmented matrix {@code [A | X]}.
      *
-     * @param other the matrix whose columns are appended, with the same number of rows as this one
-     * @return a new matrix with the columns of both; neither operand is changed
+     * @param X the matrix whose columns are appended
+     * @return a new matrix with the columns of both
      */
     public Matrix merge(
-        final Matrix other
+        final Matrix X
     ) {
-        checkMatrix();
         Preconditions.checkNotNull(
-            other,
-            "Matrix.merge: other matrix must not be null"
+            X,
+            "Matrix.merge: X matrix must not be null"
         );
         Preconditions.checkArgument(
-            data.length == other.rows(),
-            "Matrix.merge: matrices must have the same number of rows: %s != %s",
-            data.length,
-            other.rows()
+            rows() == X.rows(),
+            "Matrix.merge: both matrices must have the same number of rows"
         );
 
-        final int cols = data[0].length;
-        final int otherCols = other.cols();
-        double[][] mergedData = new double[data.length][cols + otherCols];
-        for (int i = 0; i < data.length; i++) {
+        final int cols = cols();
+        final int otherCols = X.cols();
+        double[][] mergedData = new double[rows()][cols + otherCols];
+        for (int i = 0; i < rows(); i++) {
             System.arraycopy(data[i], 0, mergedData[i], 0, cols);
-            System.arraycopy(other.data[i], 0, mergedData[i], cols, otherCols);
+            System.arraycopy(X.data[i], 0, mergedData[i], cols, otherCols);
         }
         return new Matrix(mergedData);
     }
 
     /**
-     * Reorders the rows: row {@code i} of the result is row {@code shuffledIndices.get(i)} of this
-     * matrix.
+     * Reorders the rows according to the provided specification.
      *
-     * @param shuffledIndices a permutation of the row indices, each of {@code 0} to {@code rows() - 1}
-     * exactly once
-     * @return a new matrix with the rows reordered
+     * @param shuffledIndices a permutation of the row indices
+     * @return a new matrix with the reordered rows
      */
     public Matrix permuteRows(
         final List<Integer> shuffledIndices
     ) {
-        checkMatrix();
         Permutations.checkPermutation(
             shuffledIndices,
-            data.length,
+            rows(),
             "Matrix.permuteRows"
         );
 
-        double[][] shuffledData = new double[data.length][];
-        for (int i = 0; i < data.length; i++) {
-            shuffledData[i] = data[shuffledIndices.get(i)];
+        double[][] shuffledData = new double[rows()][cols()];
+        for (int i = 0; i < rows(); i++) {
+            shuffledData[i] = data[shuffledIndices.get(i)].clone();
         }
         return new Matrix(shuffledData);
     }
 
     /**
-     * Returns one row as a vector.
+     * Returns the row, at the specified index, as a {@link Vector}.
      *
      * @param rowIndex the zero-based index of the row
-     * @return a copy of the row; changing it does not affect this matrix
+     * @return the row at the given index
      */
     public Vector getRow(
         final int rowIndex
     ) {
-        checkMatrix();
-        Preconditions.checkArgument(
-            rowIndex >= 0 &&
-                rowIndex < data.length,
-            "Matrix.getRow: row index out of bounds: %s",
-            rowIndex
+        Preconditions.checkElementIndex(
+            rowIndex,
+            rows(),
+            "Matrix.getRow: row index"
         );
 
-        return new Vector(data[rowIndex]);
+        return new Vector(data[rowIndex].clone());
     }
 
     /**
-     * Returns a single entry.
+     * Returns the entry at the specified row and column indices.
      *
      * @param rowIndex the zero-based row index
      * @param colIndex the zero-based column index
-     * @return the entry at that position
+     * @return the entry at the given indices
      */
     public double get(
         final int rowIndex,
         final int colIndex
     ) {
-        checkMatrix();
-        Preconditions.checkArgument(
-            rowIndex >= 0 &&
-                rowIndex < data.length,
-            "Matrix.get: row index out of bounds: %s",
-            rowIndex
+        Preconditions.checkElementIndex(
+            rowIndex,
+            rows(),
+            "Matrix.get: row index"
         );
-        Preconditions.checkArgument(
-            colIndex >= 0 &&
-                colIndex < data[0].length,
-            "Matrix.get: column index out of bounds: %s",
-            colIndex
+        Preconditions.checkElementIndex(
+            colIndex,
+            cols(),
+            "Matrix.get: col index"
         );
 
         return data[rowIndex][colIndex];
     }
 
     /**
-     * Returns the number of rows.
-     *
-     * @return the row count, always at least 1
+     * @return the number of rows.
      */
     public int rows() {
-        checkMatrix();
-
         return data.length;
     }
 
     /**
-     * Returns the number of columns.
-     *
-     * @return the column count, always at least 1
+     * @return the number of columns.
      */
     public int cols() {
-        checkMatrix();
-
         return data[0].length;
     }
 
     /**
-     * Returns an independent copy of this matrix.
-     *
      * @return a new matrix with the same entries
      */
     public Matrix copy() {
-        checkMatrix();
-
-        return new Matrix(data);
+        return new Matrix(deepCopy(this.data));
     }
 
     /**
-     * Compares this matrix to another object for equality, entry by entry. Two matrices are equal when
-     * they have the
-     * same dimensions and every pair of matching entries is numerically equal, so {@code 0.0} and {@code
-     * -0.0} count
-     * as the same entry.
+     * Compares this matrix to another object for equality.
      *
      * @param otherObject the object to compare with
      * @return {@code true} if {@code otherObject} is a matrix with the same dimensions and entries
@@ -296,26 +229,25 @@ public record Matrix(double[][] data) {
     public boolean equals(
         final Object otherObject
     ) {
-        checkMatrix();
-
         boolean equals = true;
         if (!(otherObject instanceof Matrix otherMatrix)) {
             equals = false;
         } else {
-            otherMatrix.checkMatrix();
             if (
-                data.length != otherMatrix.data.length ||
-                data[0].length != otherMatrix.data[0].length
+                rows() != otherMatrix.rows() ||
+                cols() != otherMatrix.cols()
             ) {
                 equals = false;
             }
             int i = 0;
-            while (equals && i < data.length) {
-                if (data[i].length != otherMatrix.data[i].length) {
-                    equals = false;
-                } else {
-                    equals = Vector.entriesEqual(data[i], otherMatrix.data[i]);
-                }
+            while (
+                equals &&
+                i < rows()
+            ) {
+                equals = Vector.entriesEqual(
+                    data[i],
+                    otherMatrix.data[i]
+                );
                 i++;
             }
         }
@@ -323,15 +255,10 @@ public record Matrix(double[][] data) {
     }
 
     /**
-     * Returns a hash code that agrees with {@link #equals}: matrices that are equal have the same hash
-     * code.
-     *
-     * @return the hash code of the entries
+     * @return the hash code that agrees with {@link #equals}
      */
     @Override
     public int hashCode() {
-        checkMatrix();
-
         int result = 1;
         for (double[] row : data) {
             result = 31 * result + Vector.entriesHashCode(row);
@@ -339,14 +266,36 @@ public record Matrix(double[][] data) {
         return result;
     }
 
-    // Checks the cheap structural invariants: at least one row and column, no null rows, rectangular
-    // shape.
-    private void checkMatrix() {
+    /**
+     * Returns the identity matrix of the given dimension.
+     *
+     * @param dimension the number of rows and columns
+     * @return the identity matrix
+     */
+    public static Matrix identity(
+        final int dimension
+    ) {
+        Preconditions.checkArgument(
+            dimension > 0,
+            "Matrix.identity: dimension must be positive"
+        );
+
+        double[][] identityData = new double[dimension][dimension];
+        for (int i = 0; i < dimension; i++) {
+            identityData[i][i] = 1;
+        }
+        return new Matrix(identityData);
+    }
+
+    // Checks that there are at least one row and column, no null rows, rectangular shape.
+    private static void checkMatrix(
+        final double[][] data
+    ) {
         Preconditions.checkNotNull(
             data,
             "Matrix: data must not be null"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             data.length > 0,
             "Matrix: matrix must have at least one row"
         );
@@ -354,23 +303,34 @@ public record Matrix(double[][] data) {
             data[0],
             "Matrix: row must not be null"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             data[0].length > 0,
             "Matrix: matrix must have at least one column"
         );
-        for (double[] row : data) {
+        for (var row : data) {
             Preconditions.checkNotNull(
                 row,
                 "Matrix: row must not be null"
             );
-            Preconditions.checkState(
+            Preconditions.checkArgument(
                 row.length == data[0].length,
                 "Matrix: all rows must have the same number of columns"
             );
-            Preconditions.checkState(
+            Preconditions.checkArgument(
                 Arrays.stream(row).allMatch(Double::isFinite),
                 "Matrix: all entries must be finite numbers"
             );
         }
+    }
+
+    // Returns a deep copy of this matrix's data
+    private static double[][] deepCopy(
+        final double[][] data
+    ) {
+        double[][] copy = new double[data.length][data[0].length];
+        for (int i = 0; i < data.length; i++) {
+            copy[i] = data[i].clone();
+        }
+        return copy;
     }
 }

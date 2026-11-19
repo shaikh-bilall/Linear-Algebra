@@ -7,6 +7,7 @@ import linearAlgebra.domain.Vector;
 
 /**
  * The elementary operation that swaps two rows.
+ * This class stores an immutable copy of the data and does not allow any modifications.
  *
  * @param sourceRow the zero-based index of one of the rows
  * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
@@ -17,7 +18,7 @@ public record RowSwap(
 ) implements RowOperation {
 
     /**
-     * Creates the swap {@link RowOperation}.
+     * Stores the swap {@link RowOperation}.
      *
      * @param sourceRow the zero-based index of one of the rows
      * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
@@ -40,6 +41,13 @@ public record RowSwap(
     @Override
     public int targetRow() {
         return targetRow;
+    }
+
+    /**
+     * @return a new swap {@link RowOperation} with the same indices
+     */
+    public RowSwap copy() {
+        return new RowSwap(sourceRow, targetRow);
     }
 
     /**
@@ -80,18 +88,16 @@ public record RowSwap(
 
     // Checks that both indices are non-negative.
     private static void checkRowSwap(
-        int sourceRow,
-        int targetRow
+        final int sourceRow,
+        final int targetRow
     ) {
         Preconditions.checkArgument(
             sourceRow >= 0,
-            "RowSwap: source row index must be non-negative: %s",
-            sourceRow
+            "RowSwap: source row index must be non-negative"
         );
         Preconditions.checkArgument(
             targetRow >= 0,
-            "RowSwap: target row index must be non-negative: %s",
-            targetRow
+            "RowSwap: target row index must be non-negative"
         );
     }
 }

@@ -7,6 +7,7 @@ import linearAlgebra.domain.Vector;
 
 /**
  * The elementary operation that multiplies a row by a nonzero {@code scalar}.
+ * This class stores an immutable copy of the data and does not allow any modifications.
  *
  * @param targetRow the zero-based index of the row to scale
  * @param scalar    the nonzero, finite {@code scalar}
@@ -17,7 +18,7 @@ public record RowScale(
 ) implements RowOperation {
 
     /**
-     * Creates the scaling {@link RowOperation}.
+     * Stores the scaling {@link RowOperation}.
      *
      * @param targetRow the zero-based index of the row to scale
      * @param scalar    the nonzero, finite {@code scalar}
@@ -40,6 +41,13 @@ public record RowScale(
     @Override
     public double scalar() {
         return scalar;
+    }
+
+    /**
+     * @return a new scaling {@link RowOperation} with the same index and scalar
+     */
+    public RowScale copy() {
+        return new RowScale(targetRow, scalar);
     }
 
     /**
@@ -80,13 +88,12 @@ public record RowScale(
 
     // Checks that the index is non-negative and the scalar is nonzero and finite.
     private static void checkRowScale(
-        int targetRow,
-        double scalar
+        final int targetRow,
+        final double scalar
     ) {
         Preconditions.checkArgument(
             targetRow >= 0,
-            "RowScale: target row index must be non-negative: %s",
-            targetRow
+            "RowScale: target row index must be non-negative"
         );
         Preconditions.checkArgument(
             Double.isFinite(scalar),

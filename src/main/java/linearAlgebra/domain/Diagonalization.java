@@ -2,118 +2,76 @@ package linearAlgebra.domain;
 
 import com.google.common.base.Preconditions;
 
-import java.util.Objects;
-
 /**
- * The factorization {@code A = P D P^-1} of a diagonalizable matrix {@code A}. All three matrices are
- * square and the
- * same size, and {@code D} is diagonal.
+ * The factorization {@code A = P D P^-1} of a diagonalizable {@link Matrix} {@code A}.
+ * All three matrices are square and the same size, and {@code D} is diagonal.
+ * This class stores an immutable copy of the data and does not allow any modifications.
  *
- * @param P        the eigenvectors of {@code A}, one per column
- * @param D        the eigenvalues matching the columns of {@code P}, on the diagonal
- * @param inverseP the inverse of {@code P}
+ * @param P        the eigenvector {@link Matrix} {@code P} of {@code A}
+ * @param D        the {@link Matrix} with eigenvalues on the diagonal {@code D}
+ * @param inverseP the inverse of the eigenvector {@link Matrix} {@code P}
  */
-public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
+public record Diagonalization(
+    Matrix P,
+    Matrix D,
+    Matrix inverseP
+) {
 
     /**
-     * Creates a diagonalization from its eigenvector matrix, eigenvalue matrix and inverse.
+     * Stores a diagonalization for a {@link Matrix}
+     * from its eigenvector {@link Matrix},
+     * {@link Matrix} with eigenvalues on the diagonal and
+     * inverse of the eigenvector {@link Matrix}.
      *
-     * @param P        the eigenvectors, one per column
-     * @param D        the eigenvalues matching the columns of {@code P}, on the diagonal
-     * @param inverseP the inverse of {@code P}
+     * @param P        the eigenvector {@link Matrix} {@code P} of {@code A}
+     * @param D        the {@link Matrix} with eigenvalues on the diagonal {@code D}
+     * @param inverseP the inverse of the eigenvector {@link Matrix} {@code P}
      */
-    public Diagonalization(
-        final Matrix P,
-        final Matrix D,
-        final Matrix inverseP
-    ) {
-        this.P = P;
-        this.D = D;
-        this.inverseP = inverseP;
-
-        checkDiagonalization();
+    public Diagonalization {
+        checkDiagonalization(P, D, inverseP);
     }
 
     /**
-     * Returns the eigenvectors, one per column.
-     *
-     * @return the matrix {@code P}
+     * @return the eigenvector {@link Matrix} {@code P} of {@code A}
      */
     @Override
     public Matrix P() {
-        checkDiagonalization();
-
         return P;
     }
 
     /**
-     * Returns the eigenvalues on the diagonal.
-     *
-     * @return the matrix {@code D}
+     * @return the {@link Matrix} with eigenvalues on the diagonal {@code D}
      */
     @Override
     public Matrix D() {
-        checkDiagonalization();
-
         return D;
     }
 
     /**
-     * Returns the inverse of the eigenvector matrix.
-     *
-     * @return the inverse of {@code P}
+     * @return the inverse of the eigenvector {@link Matrix} {@code P}
      */
     @Override
     public Matrix inverseP() {
-        checkDiagonalization();
-
         return inverseP;
     }
 
     /**
-     * Compares this diagonalization to another object for equality: it is equal when {@code P}, {@code
-     * D} and the
-     * inverse of {@code P} are each equal to those of the other, as defined by {@link Matrix#equals}.
-     *
-     * @param otherObject the object to compare with
-     * @return {@code true} if {@code otherObject} is a diagonalization with equal matrices
+     * @return a new diagonalization with equal matrices
      */
-    @Override
-    public boolean equals(
-        final Object otherObject
+    public Diagonalization copy() {
+        return new Diagonalization(
+            P.copy(),
+            D.copy(),
+            inverseP.copy()
+        );
+    }
+
+    // Checks that all three matrices exist, are square and the same size, and D is diagonal.
+    private static void checkDiagonalization(
+        final Matrix P,
+        final Matrix D,
+        final Matrix inverseP
     ) {
-        checkDiagonalization();
-
-        boolean equals;
-        if (!(otherObject instanceof Diagonalization(
-            Matrix otherP,
-            Matrix otherD,
-            Matrix otherInverseP
-        ))) {
-            equals = false;
-        } else {
-            equals = P.equals(otherP) &&
-                    D.equals(otherD) &&
-                    inverseP.equals(otherInverseP);
-        }
-        return equals;
-    }
-
-    /**
-     * Returns a hash code that agrees with {@link #equals}.
-     *
-     * @return the hash code of the three matrices
-     */
-    @Override
-    public int hashCode() {
-        checkDiagonalization();
-
-        return Objects.hash(P, D, inverseP);
-    }
-
-    // Checks the structural invariants: all three matrices exist, are square and the same size, and D is
-    // diagonal.
-    private void checkDiagonalization() {
         Preconditions.checkNotNull(
             P,
             "Diagonalization: P must not be null"
@@ -126,24 +84,24 @@ public record Diagonalization(Matrix P, Matrix D, Matrix inverseP) {
             inverseP,
             "Diagonalization: inverse of P must not be null"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             P.rows() == P.cols(),
             "Diagonalization: P must be square"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             D.rows() == P.rows() &&
-                D.cols() == P.cols(),
+            D.cols() == P.cols(),
             "Diagonalization: D must have the same dimensions as P"
         );
-        Preconditions.checkState(
+        Preconditions.checkArgument(
             inverseP.rows() == P.rows() &&
-                inverseP.cols() == P.cols(),
+            inverseP.cols() == P.cols(),
             "Diagonalization: inverse of P must have the same dimensions as P"
         );
         for (int i = 0; i < D.rows(); i++) {
             for (int j = 0; j < D.cols(); j++) {
                 if (i != j) {
-                    Preconditions.checkState(
+                    Preconditions.checkArgument(
                         D.get(i, j) == 0,
                         "Diagonalization: D must be diagonal"
                     );

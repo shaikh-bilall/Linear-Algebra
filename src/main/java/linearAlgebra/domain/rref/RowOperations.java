@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 
 /**
  * An ordered sequence of {@link RowOperation}s.
+ * This class stores an immutable copy of the data and does not allow any modifications.
  *
  * @param operations the {@link RowOperation}s, in order
  */
@@ -17,12 +18,12 @@ public record RowOperations(
 ) implements Iterable<RowOperation> {
 
     /**
-     * Creates an ordered sequence of {@link RowOperation}s.
+     * Stores an ordered sequence of {@link RowOperation}s.
      *
      * @param operations the {@link RowOperation}s, in order
      */
     public RowOperations(
-        List<RowOperation> operations
+        final List<RowOperation> operations
     ) {
         checkRowOperations(operations);
 
@@ -36,7 +37,7 @@ public record RowOperations(
      * @return the {@link RowOperation} at {@code index}
      */
     public RowOperation get(
-        int index
+        final int index
     ) {
         Preconditions.checkElementIndex(
             index,
@@ -69,6 +70,13 @@ public record RowOperations(
     }
 
     /**
+     * @return a new sequence of {@link RowOperation}s with the same operations
+     */
+    public RowOperations copy() {
+        return new RowOperations(operations);
+    }
+
+    /**
      * @return an {@link Iterator} over the {@link RowOperation}s
      */
     @Override
@@ -84,7 +92,7 @@ public record RowOperations(
      */
     @Override
     public void forEach(
-        Consumer<? super RowOperation> action
+        final Consumer<? super RowOperation> action
     ) {
         Preconditions.checkNotNull(
             action,
@@ -93,9 +101,9 @@ public record RowOperations(
         operations.forEach(action);
     }
 
-    // Checks that the operations list and it's elements are not empty
+    // Checks that the operations list and its elements are not empty
     private static void checkRowOperations(
-        List<RowOperation> operations
+        final List<RowOperation> operations
     ) {
         Preconditions.checkNotNull(
             operations,
