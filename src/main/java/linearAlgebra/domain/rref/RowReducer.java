@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
-import linearAlgebra.domain.exceptions.NonExistentRowOperationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,15 +80,11 @@ public final class RowReducer {
      * @param A         the {@link Matrix} to operate on
      * @return a {@link Matrix} with the {@link RowOperation} applied;
      *         {@code A} is unchanged
-     * @throws NonExistentRowOperationException
-     *         if an operation in {@code operations} is not a supported operation
      */
     public static Matrix apply(
         final RowOperation operation,
         final Matrix A
-    )
-        throws NonExistentRowOperationException
-    {
+    ) {
         Preconditions.checkNotNull(
             operation,
             "RowReducer.apply: operation must not be null"
@@ -111,15 +106,11 @@ public final class RowReducer {
      * @param v         the {@link Vector} to operate on
      * @return a {@link Vector} with the {@link RowOperation} applied;
      *         {@code v} is unchanged
-     * @throws NonExistentRowOperationException
-     *         if an operation in {@code operations} is not a supported operation
      */
     public static Vector apply(
         final RowOperation operation,
         final Vector v
-    )
-        throws NonExistentRowOperationException
-    {
+    ) {
         Preconditions.checkNotNull(
             operation,
             "RowReducer.apply: operation must not be null"
@@ -142,15 +133,11 @@ public final class RowReducer {
      * @param A          the {@link Matrix} to operate on
      * @return a {@link Matrix} after all {@link RowOperations} are applied;
      *         a {@link Matrix} equal to {@code A} when the sequence is empty
-     * @throws NonExistentRowOperationException
-     *         if an operation in {@code operations} is not a supported operation
      */
     public static Matrix applyAll(
         final RowOperations operations,
         final Matrix A
-    )
-        throws NonExistentRowOperationException
-    {
+    ) {
         Preconditions.checkNotNull(
             operations,
             "RowReducer.applyAll: operations must not be null"
@@ -173,15 +160,11 @@ public final class RowReducer {
      * @param v          the {@link Vector} to operate on
      * @return a {@link Vector} after all {@link RowOperations} are applied;
      *         a {@link Vector} equal to {@code v} when the sequence is empty
-     * @throws NonExistentRowOperationException
-     *         if an operation in {@code operations} is not a supported operation
      */
     public static Vector applyAll(
         final RowOperations operations,
         final Vector v
-    )
-        throws NonExistentRowOperationException
-    {
+    ) {
         Preconditions.checkNotNull(
             operations,
             "RowReducer.applyAll: operations must not be null"
@@ -200,9 +183,7 @@ public final class RowReducer {
     private static double[][] applyAll(
         final RowOperations operations,
         final double[][] data
-    )
-        throws NonExistentRowOperationException
-    {
+    ) {
         for (var operation : operations) {
             applyInPlace(data, operation);
         }
@@ -210,13 +191,11 @@ public final class RowReducer {
     }
 
     // Holds the only copy of the elementary row-operation arithmetic on a private working array.
-    private static void applyInPlace(
+    private static double[][] applyInPlace(
         final double[][] data,
         final RowOperation operation
-    )
-        throws NonExistentRowOperationException
-    {
-        switch (operation) {
+    ) {
+        return switch (operation) {
             case RowSwap swap -> {
                 final int source = swap.sourceRow();
                 final int target = swap.targetRow();
@@ -228,6 +207,8 @@ public final class RowReducer {
 
                 data[source] = data[target];
                 data[target] = temp;
+
+                yield data;
             }
             case RowScale scale -> {
                 final int target = scale.targetRow();
@@ -243,6 +224,8 @@ public final class RowReducer {
                         j
                     );
                 }
+
+                yield data;
             }
             case RowCombine combine -> {
                 final int source = combine.sourceRow();
@@ -260,9 +243,10 @@ public final class RowReducer {
                         j
                     );
                 }
+
+                yield data;
             }
-            default -> throw new NonExistentRowOperationException();
-        }
+        };
     }
 
     // Checks that a row index exists in an operand with the given number of rows.
@@ -284,9 +268,7 @@ public final class RowReducer {
         final double[][] working,
         final List<RowOperation> operations,
         final RowOperation operation
-    )
-        throws NonExistentRowOperationException
-    {
+    ) {
         applyInPlace(working, operation);
         operations.add(operation);
     }

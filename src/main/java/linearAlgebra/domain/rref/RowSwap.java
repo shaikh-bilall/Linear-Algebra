@@ -2,9 +2,6 @@ package linearAlgebra.domain.rref;
 
 import com.google.common.base.Preconditions;
 
-import linearAlgebra.domain.Matrix;
-import linearAlgebra.domain.Vector;
-
 /**
  * The elementary operation that swaps two rows.
  * This class stores an immutable copy of the data and does not allow any modifications.
@@ -30,7 +27,6 @@ public record RowSwap(
     /**
      * @return the zero-based index of the first row to swap
      */
-    @Override
     public int sourceRow() {
         return sourceRow;
     }
@@ -38,7 +34,6 @@ public record RowSwap(
     /**
      * @return the zero-based index of the second row to swap
      */
-    @Override
     public int targetRow() {
         return targetRow;
     }
@@ -48,42 +43,6 @@ public record RowSwap(
      */
     public RowSwap copy() {
         return new RowSwap(sourceRow, targetRow);
-    }
-
-    /**
-     * Swaps the two rows of a {@link Matrix}.
-     *
-     * @param A the {@link Matrix} to operate on
-     * @return a new {@link Matrix} with the rows swapped; {@code A} is unchanged
-     */
-    @Override
-    public Matrix apply(
-        final Matrix A
-    ) {
-        Preconditions.checkNotNull(
-            A,
-            "RowSwap.apply: matrix must not be null"
-        );
-
-        return RowReducer.apply(this, A);
-    }
-
-    /**
-     * Swaps the two entries of a {@link Vector} at the same indices.
-     *
-     * @param v the {@link Vector} to operate on
-     * @return a new {@link Vector} with the entries swapped; {@code v} is unchanged
-     */
-    @Override
-    public Vector apply(
-        final Vector v
-    ) {
-        Preconditions.checkNotNull(
-            v,
-            "RowSwap.apply: vector must not be null"
-        );
-
-        return RowReducer.apply(this, v);
     }
 
     // Checks that both indices are non-negative.

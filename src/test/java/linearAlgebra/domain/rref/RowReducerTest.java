@@ -2,7 +2,6 @@ package linearAlgebra.domain.rref;
 
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
-import linearAlgebra.domain.exceptions.NonExistentRowOperationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -556,25 +555,6 @@ class RowReducerTest {
     // One operation of each type, all valid for a matrix with three rows and a vector with three entries.
     private static List<RowOperation> operations() {
         return List.of(new RowSwap(0, 2), new RowScale(1, 3), new RowCombine(0, 2, -2));
-    }
-
-    // An operation the reducer does not know how to perform.
-    private static RowOperation unsupportedOperation() {
-        return new RowOperation() {
-            @Override
-            public Matrix apply(
-                final Matrix A
-            ) {
-                return A;
-            }
-
-            @Override
-            public Vector apply(
-                final Vector v
-            ) {
-                return v;
-            }
-        };
     }
 
     private static boolean isNotIdentity(
