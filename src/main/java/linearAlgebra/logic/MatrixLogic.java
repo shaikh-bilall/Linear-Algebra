@@ -1,24 +1,21 @@
 package linearAlgebra.logic;
 
 import com.google.common.base.Preconditions;
-import linearAlgebra.domain.rref.*;
-import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
-import linearAlgebra.logic.exceptions.InverseNotAvailableException;
+
 import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 
 /**
- * Linear-algebra operations on a fixed matrix: product, reduced row echelon form, determinant and
- * inverse. The matrix is never modified.
+ * Basic linear algebra operations on a {@link Matrix}.
  */
 public final class MatrixLogic {
 
     private final Matrix A;
 
     /**
-     * Creates operations for a fixed matrix.
+     * Creates logical operations to be performed on a {@link Matrix}.
      *
-     * @param A the matrix to operate on
+     * @param A the {@link Matrix} to operate on
      */
     public MatrixLogic(
         final Matrix A
@@ -29,10 +26,10 @@ public final class MatrixLogic {
     }
 
     /**
-     * Multiplies the matrix by another on its right.
+     * Multiplies the {@link Matrix} by another on its right.
      *
-     * @param other the right-hand factor, with as many rows as the matrix has columns
-     * @return the product, as a new matrix
+     * @param other the right-hand factor, with as many rows as the {@link Matrix} has columns
+     * @return the product, as a new {@link Matrix}
      * @throws MatrixMultiplyDimMismatchException if the dimensions do not allow the product
      */
     public Matrix multiply(
@@ -73,84 +70,11 @@ public final class MatrixLogic {
         return new Matrix(resultData);
     }
 
-    /**
-     * Returns the reduced row echelon form of the matrix.
-     *
-     * @return a matrix in reduced row echelon form
-     */
-    public Matrix rref() {
-        checkMatrixLogic();
-
-        return RowReducer.reduce(A).reduced();
-    }
-
-    /**
-     * Returns the inverse of the matrix.
-     *
-     * @return the inverse, as a new matrix
-     * @throws InverseNotAvailableException if the matrix is not square or is singular
-     */
-    public Matrix inverse()
-        throws InverseNotAvailableException
-    {
-        checkMatrixLogic();
-
-        if (A.rows() != A.cols()) {
-            throw new InverseNotAvailableException();
-        }
-
-        final Reduction reduction = RowReducer.reduce(A);
-        if (getDeterminant(reduction) == 0) {
-            throw new InverseNotAvailableException();
-        }
-        return RowReducer.applyAll(reduction.operations(), Matrix.identity(A.rows()));
-    }
-
-    /**
-     * Returns the determinant of the matrix.
-     *
-     * @return the determinant, which is 0 for a singular matrix
-     * @throws DeterminantDoesNotExistException if the matrix is not square
-     */
-    public double determinant()
-        throws DeterminantDoesNotExistException
-    {
-        checkMatrixLogic();
-
-        if (A.rows() != A.cols()) {
-            throw new DeterminantDoesNotExistException();
-        }
-        return getDeterminant(RowReducer.reduce(A));
-    }
-
     // Checks that the matrix being worked on exists.
     private void checkMatrixLogic() {
         Preconditions.checkNotNull(
             A,
             "MatrixLogic: matrix must not be null"
         );
-    }
-
-    // Returns the determinant from the operations recorded while reducing a square matrix.
-    private static double getDeterminant(
-        final Reduction reduction
-    ) {
-        final Matrix reduced = reduction.reduced();
-        for (int i = 0; i < reduced.rows(); i++) {
-            if (Math.abs(reduced.get(i, i)) < 0.5) {
-                return 0;
-            }
-        }
-
-        // RowSwap flips the sign, RowScale divides by its scalar, and RowCombine leaves the determinant unchanged.
-        double determinant = 1;
-        for (var operation : reduction.operations()) {
-            if (operation instanceof RowSwap) {
-                determinant = -determinant;
-            } else if (operation instanceof RowScale scale) {
-                determinant /= scale.scalar();
-            }
-        }
-        return determinant;
     }
 }

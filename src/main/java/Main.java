@@ -1,5 +1,3 @@
-import com.google.common.base.Preconditions;
-
 import linearAlgebra.domain.Diagonalization;
 import linearAlgebra.logic.exceptions.ComplexEigenvaluesException;
 import linearAlgebra.logic.exceptions.DefectiveMatrixException;
@@ -10,6 +8,7 @@ import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.logic.DiagonalizationLogic;
 import linearAlgebra.logic.MatrixLogic;
+import linearAlgebra.logic.RowOperationLogic;
 
 import java.util.Locale;
 
@@ -80,11 +79,11 @@ public class Main {
 
         printHeading("1. Solving A x = b with RREF (the solution is x = [2, 3, -1])");
         print("Augmented matrix [A | b]", augmented);
-        print("RREF of [A | b]", new MatrixLogic(augmented).rref());
+        print("RREF of [A | b]", RowOperationLogic.rref(augmented));
     }
 
-    // Prints the determinant and, when it exists, the inverse together with a check that A * A^-1 is the
-    // identity.
+    // Prints the determinant and, when it exists,
+    // the inverse together with a check that A * A^-1 is the identity.
     private static void showInverse(
         final String title,
         final Matrix A
@@ -92,15 +91,14 @@ public class Main {
         printHeading(title);
         print("A", A);
 
-        MatrixLogic logic = new MatrixLogic(A);
         try {
-            System.out.println("Determinant: " + format(logic.determinant()));
+            System.out.println("Determinant: " + format(RowOperationLogic.determinant(A)));
         } catch (DeterminantDoesNotExistException e) {
             System.out.println("A has no determinant because it is not square.");
         }
         System.out.println();
         try {
-            Matrix inverse = logic.inverse();
+            Matrix inverse = RowOperationLogic.inverse(A);
             print("A^-1", inverse);
             print("A * A^-1 (the identity)", product(A, inverse));
         } catch (InverseNotAvailableException e) {
@@ -131,8 +129,8 @@ public class Main {
         }
     }
 
-    // Prints A = P D P^-1 with a check that multiplying the factors back together gives A, or why A has
-    // no such form.
+    // Prints A = P D P^-1 with a check that multiplying the factors back together gives A,
+    // or why A has no such form.
     private static void showDiagonalization(
         final String title,
         final Matrix A

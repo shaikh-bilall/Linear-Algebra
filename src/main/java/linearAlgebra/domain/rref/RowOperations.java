@@ -101,7 +101,7 @@ public record RowOperations(
         operations.forEach(action);
     }
 
-    // Checks that the operations list and its elements are not empty
+    // Checks that the operations list and its elements are not null
     private static void checkRowOperations(
         final List<RowOperation> operations
     ) {

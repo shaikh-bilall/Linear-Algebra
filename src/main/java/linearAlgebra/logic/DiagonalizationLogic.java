@@ -17,38 +17,39 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Diagonalizes a real square matrix as {@code A = P D P^-1}, using real numbers only. A matrix with
- * complex
- * eigenvalues, or with too few independent eigenvectors, has no such factorization and is rejected.
+ * Diagonalizes a real square {@link Matrix} as {@code A = P D P^-1}, using real numbers only.
+ * A {@link Matrix} with complex eigenvalues, or with too few independent eigenvectors,
+ * has no such factorization and is rejected.
  */
 public final class DiagonalizationLogic {
 
     private final Matrix A;
 
-    // Machine epsilon: the spacing of doubles just above 1. Drives the QR iteration's deflation test.
+    // Machine epsilon: the spacing of doubles just above 1.
+    // Drives the QR iteration's deflation test.
     private static final double EPSILON = Math.ulp(1.0);
-    // QR sweeps allowed on the active window before giving up; the count restarts whenever an eigenvalue
-    // splits off.
-    // Ordinary matrices need a handful, but defective ones converge slowly (a 4x4 Jordan block took
-    // about 50).
+    // QR sweeps allowed on the active window before giving up;
+    // the count restarts whenever an eigenvalue splits off.
+    // Ordinary matrices need a handful,
+    // but defective ones converge slowly (a 4x4 Jordan block took about 50).
     private static final int MAX_ITERATIONS = 100;
-    // Relative to the largest absolute entry of the input; eigenvalues closer than this are one repeated
-    // eigenvalue,
+    // Relative to the largest absolute entry of the input;
+    // eigenvalues closer than this are one repeated eigenvalue,
     // and an imaginary part this small counts as zero.
     private static final double CLUSTER_TOLERANCE = 1e-6;
-    // Relative to the largest absolute entry of the input; entries of T - lambda*I this small are
-    // rounding noise.
+    // Relative to the largest absolute entry of the input;
+    // entries of T - lambda*I this small are rounding noise.
     private static final double ZERO_TOLERANCE = 1e-10;
     // In an RREF every pivot is 1 and everything else in a pivot's row to its left is rounding noise.
     private static final double PIVOT_THRESHOLD = 0.5;
-    // Entries within this relative distance of each other count as equally large when fixing an
-    // eigenvector's sign.
+    // Entries within this relative distance of each other count as equally large
+    // when fixing an eigenvector's sign.
     private static final double SIGN_TIE_TOLERANCE = 1e-9;
 
     /**
-     * Creates a diagonalizer for a fixed square matrix.
+     * Creates a diagonalizing logic for a fixed square {@link Matrix}.
      *
-     * @param A the square matrix to diagonalize
+     * @param A the square {@link Matrix} to diagonalize
      */
     public DiagonalizationLogic(
         final Matrix A
@@ -59,14 +60,14 @@ public final class DiagonalizationLogic {
     }
 
     /**
-     * Computes the diagonalization of the matrix.
+     * Computes the {@link Diagonalization} of the {@link Matrix}.
      *
-     * @return the factorization, with the eigenvalues ordered by decreasing magnitude and the columns of
-     * {@code P} the
-     *         matching unit eigenvectors
-     * @throws ComplexEigenvaluesException if the matrix has complex eigenvalues
-     * @throws DefectiveMatrixException if the matrix is defective
-     * @throws DependentEigenvectorsException if the eigenvectors of the matrix are linearly dependent
+     * @return the factorization,
+     *         with the eigenvalues ordered by decreasing magnitude and
+     *         the columns of {@code P} the matching unit eigenvectors
+     * @throws ComplexEigenvaluesException if the {@link Matrix} has complex eigenvalues
+     * @throws DefectiveMatrixException if the {@link Matrix} is defective
+     * @throws DependentEigenvectorsException if the eigenvectors of the {@link Matrix} are linearly dependent
      */
     public Diagonalization diagonalize()
         throws ComplexEigenvaluesException,
@@ -203,20 +204,21 @@ public final class DiagonalizationLogic {
     ) {
         final int n = H.length;
 
-        // With s1, s2 the shifts: mean = (s1 + s2) / 2 and discriminant = mean^2 - s1 s2 = ((a - d) /
-        // 2)^2 + bc.
+        // With s1, s2 the shifts:
+        // mean = (s1 + s2) / 2 and
+        // discriminant = mean^2 - s1 s2 = ((a - d) / 2)^2 + bc.
         final double a = H[high - 1][high - 1];
         final double b = H[high - 1][high];
         final double c = H[high][high - 1];
         final double d = H[high][high];
         double mean = (a + d) / 2;
         double discriminant = ((a - d) / 2) * ((a - d) / 2) + b * c;
-        if (iteration == 10 || iteration == 20) {
+        if (iteration == 10 || iteration == 20) { //fixme: exceptional shift bounds
             // Exceptional shift: the ordinary shifts have stalled, so take a deliberately different
             // pair.
             final double size = Math.abs(c) + Math.abs(H[high - 1][high - 2]);
-            mean = 0.75 * size;
-            discriminant = -0.4375 * size * size;
+            mean = 0.75 * size; //fixme: Wilkinson shift constants
+            discriminant = -0.4375 * size * size; //fixme: Wilkinson shift constants
         }
 
         for (int k = low; k < high; k++) {
@@ -359,7 +361,7 @@ public final class DiagonalizationLogic {
                 shifted[i][j] = (Math.abs(entry) <= ZERO_TOLERANCE) ? 0 : entry;
             }
         }
-        final Matrix reduced = new MatrixLogic(new Matrix(shifted)).rref();
+        final Matrix reduced = RowOperationLogic.rref(new Matrix(shifted));
 
         final int[] pivotColumn = new int[n];
         final boolean[] isPivot = new boolean[n];
@@ -418,7 +420,7 @@ public final class DiagonalizationLogic {
     {
         final Matrix inverse;
         try {
-            inverse = new MatrixLogic(P).inverse();
+            inverse = RowOperationLogic.inverse(P);
         } catch (InverseNotAvailableException e) {
             throw new DependentEigenvectorsException();
         }
@@ -433,7 +435,7 @@ public final class DiagonalizationLogic {
         try {
             return matrix.multiply(vector);
         } catch (MatrixMultiplyDimMismatchException e) {
-            Preconditions.checkState(
+            Preconditions.checkState( //fixme: always false
                 false,
                 "DiagonalizationLogic.multiplyKnownDimensions: matrix columns must match vector length"
             );

@@ -30,6 +30,18 @@ public record RowCombine(
     }
 
     /**
+     * Applying the linear combination {@link RowOperation} does not modify the determinant.
+     *
+     * @param determinant The determinant before applying this operation.
+     * @return the determinant after applying this operation.
+     */
+    public double updatedDeterminant(
+        final double determinant
+    ) {
+        return determinant;
+    }
+
+    /**
      * @return the zero-based index of the row whose {@code scalar} multiple is added
      */
     public int sourceRow() {

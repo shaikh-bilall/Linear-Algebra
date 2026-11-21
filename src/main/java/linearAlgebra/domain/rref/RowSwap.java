@@ -25,6 +25,18 @@ public record RowSwap(
     }
 
     /**
+     * Applying the swap {@link RowOperation} negates the determinant.
+     *
+     * @param determinant The determinant before applying this operation.
+     * @return the determinant after applying this operation.
+     */
+    public double updatedDeterminant(
+        final double determinant
+    ) {
+        return -determinant;
+    }
+
+    /**
      * @return the zero-based index of the first row to swap
      */
     public int sourceRow() {

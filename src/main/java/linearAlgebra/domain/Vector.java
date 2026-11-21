@@ -120,8 +120,8 @@ public record Vector(
             "Vector.dot: other vector must not be null"
         );
         Preconditions.checkArgument(
-          this.dimension() == other.dimension(),
-          "Vector.dot: dimensions must match for both vectors"
+            this.dimension() == other.dimension(),
+            "Vector.dot: dimensions must match for both vectors"
         );
 
         double result = 0;

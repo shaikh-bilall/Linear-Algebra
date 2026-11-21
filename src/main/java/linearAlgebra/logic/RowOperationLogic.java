@@ -1,26 +1,29 @@
-package linearAlgebra.domain.rref;
+package linearAlgebra.logic;
 
 import com.google.common.base.Preconditions;
 
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
+import linearAlgebra.domain.rref.*;
+import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
+import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * It finds the reduced row echelon form ({@code RREF}) of a {@link Matrix}
+ * Finds the reduced row echelon form ({@code RREF}) of a {@link Matrix}
  * together with the {@link RowOperations} that produced it, and applies them
  * to {@link Matrix} and {@link Vector} objects.
  */
-public final class RowReducer {
+public final class RowOperationLogic {
 
     // Relative to the largest absolute entry of the input;
     // anything at or below this value counts as zero.
     private static final double RELATIVE_TOLERANCE = 1e-10;
 
     // Prevents instantiation.
-    private RowReducer() {
+    private RowOperationLogic() {
     }
 
     /**
@@ -34,7 +37,7 @@ public final class RowReducer {
     ) {
         Preconditions.checkNotNull(
             A,
-            "RowReducer.reduce: matrix must not be null"
+            "RowOperationLogic.reduce: matrix must not be null"
         );
 
         final List<RowOperation> operations = new ArrayList<>();
@@ -48,7 +51,7 @@ public final class RowReducer {
 
         while (
             pivotRow < rows &&
-            pivotCol < cols
+                pivotCol < cols
         ) {
             final int bestRow = findPivotRow(working, pivotRow, pivotCol, tolerance);
             if (bestRow != -1) {
@@ -87,11 +90,11 @@ public final class RowReducer {
     ) {
         Preconditions.checkNotNull(
             operation,
-            "RowReducer.apply: operation must not be null"
+            "RowOperationLogic.apply: operation must not be null"
         );
         Preconditions.checkNotNull(
             A,
-            "RowReducer.apply: matrix must not be null"
+            "RowOperationLogic.apply: matrix must not be null"
         );
 
         final double[][] data = A.data();
@@ -113,11 +116,11 @@ public final class RowReducer {
     ) {
         Preconditions.checkNotNull(
             operation,
-            "RowReducer.apply: operation must not be null"
+            "RowOperationLogic.apply: operation must not be null"
         );
         Preconditions.checkNotNull(
             v,
-            "RowReducer.apply: vector must not be null"
+            "RowOperationLogic.apply: vector must not be null"
         );
 
         final double[][] column = toColumn(v);
@@ -140,11 +143,11 @@ public final class RowReducer {
     ) {
         Preconditions.checkNotNull(
             operations,
-            "RowReducer.applyAll: operations must not be null"
+            "RowOperationLogic.applyAll: operations must not be null"
         );
         Preconditions.checkNotNull(
             A,
-            "RowReducer.applyAll: matrix must not be null"
+            "RowOperationLogic.applyAll: matrix must not be null"
         );
 
         return new Matrix(
@@ -167,17 +170,70 @@ public final class RowReducer {
     ) {
         Preconditions.checkNotNull(
             operations,
-            "RowReducer.applyAll: operations must not be null"
+            "RowOperationLogic.applyAll: operations must not be null"
         );
         Preconditions.checkNotNull(
             v,
-            "RowReducer.applyAll: vector must not be null"
+            "RowOperationLogic.applyAll: vector must not be null"
         );
 
         return fromColumn(
             applyAll(operations, toColumn(v))
         );
     }
+
+    /**
+     * Computes the reduced row echelon form of the provided {@link Matrix}.
+     *
+     * @param A the {@link Matrix} to reduce
+     * @return a {@link Matrix} in reduced row echelon form
+     */
+    public static Matrix rref(
+        final Matrix A
+    ) {
+        return reduce(A).reduced();
+    }
+
+    /**
+     * Computes the inverse of the provided {@link Matrix}.
+     *
+     * @param A the {@link Matrix} to invert
+     * @return the inverse, as a new {@link Matrix}
+     * @throws InverseNotAvailableException if the {@link Matrix} is not square or is singular
+     */
+    public static Matrix inverse(
+        final Matrix A
+    )
+        throws InverseNotAvailableException
+    {
+        if (A.rows() != A.cols()) {
+            throw new InverseNotAvailableException();
+        }
+
+        final Reduction reduction = reduce(A);
+        if (getDeterminant(reduction) == 0) {
+            throw new InverseNotAvailableException();
+        }
+        return applyAll(reduction.operations(), Matrix.identity(A.rows()));
+    }
+
+    /**
+     * Computes the determinant of the {@link Matrix}.
+     *
+     * @return the determinant, which is 0 for a singular {@link Matrix}
+     * @throws DeterminantDoesNotExistException if the {@link Matrix} is not square
+     */
+    public static double determinant(
+        final Matrix A
+    )
+        throws DeterminantDoesNotExistException
+    {
+        if (A.rows() != A.cols()) {
+            throw new DeterminantDoesNotExistException();
+        }
+        return getDeterminant(reduce(A));
+    }
+
 
     // Applies a sequence of elementary row-operations, in order, to a working array.
     private static double[][] applyAll(
@@ -220,7 +276,7 @@ public final class RowReducer {
                     data[target][j] *= factor;
                     Preconditions.checkState(
                         Double.isFinite(data[target][j]),
-                        "RowReducer: scaled entry must be finite: column %s",
+                        "RowOperationLogic: scaled entry must be finite: column %s",
                         j
                     );
                 }
@@ -239,7 +295,7 @@ public final class RowReducer {
                     data[target][j] += factor * data[source][j];
                     Preconditions.checkState(
                         Double.isFinite(data[target][j]),
-                        "RowReducer: combined entry must be finite: column %s",
+                        "RowOperationLogic: combined entry must be finite: column %s",
                         j
                     );
                 }
@@ -256,8 +312,8 @@ public final class RowReducer {
     ) {
         Preconditions.checkArgument(
             row >= 0 &&
-            row < rows,
-            "RowReducer: index out of bounds for an operand with %s rows: %s",
+                row < rows,
+            "RowOperationLogic: index out of bounds for an operand with %s rows: %s",
             rows,
             row
         );
@@ -336,5 +392,31 @@ public final class RowReducer {
             entries[i] = column[i][0];
         }
         return new Vector(entries);
+    }
+
+    // Returns the determinant from the operations recorded while reducing a square matrix.
+    private static double getDeterminant(
+        final Reduction reduction
+    ) {
+        final Matrix reduced = reduction.reduced();
+        double determinant = 1; //fixme: arbitrary initial value
+        int i = 0;
+
+        while (
+            determinant != 0 &&
+            i < reduced.rows()
+        ) {
+            if (Math.abs(reduced.get(i, i)) < 0.5) { //fixme: magic number 0.5
+                determinant = 0;
+            }
+            i++;
+        }
+
+        if (determinant != 0) {
+            for (var operation : reduction.operations()) {
+                determinant = operation.updatedDeterminant(determinant);
+            }
+        }
+        return determinant;
     }
 }

@@ -25,6 +25,18 @@ public record RowScale(
     }
 
     /**
+     * Applying the scaling {@link RowOperation} divides the determinant by the scalar.
+     *
+     * @param determinant The determinant before applying this operation.
+     * @return the determinant after applying this operation.
+     */
+    public double updatedDeterminant(
+        final double determinant
+    ) {
+        return determinant/scalar;
+    }
+
+    /**
      * @return the zero-based index of the row to scale
      */
     public int targetRow() {

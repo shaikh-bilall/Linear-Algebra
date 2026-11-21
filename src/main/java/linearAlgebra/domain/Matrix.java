@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A rectangular matrix of finite real number.
+ * A rectangular matrix of finite real numbers.
  * This class stores an immutable copy of the data and does not allow any modifications.
  *
  * @param data entries of the matrix
