@@ -6,7 +6,7 @@ import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 
 /**
- * Basic linear algebra operations on a {@link Matrix}.
+ * Defines basic linear algebra operations on a {@link Matrix}.
  */
 public final class MatrixLogic {
 

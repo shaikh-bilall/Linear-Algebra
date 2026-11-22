@@ -4,7 +4,12 @@ import com.google.common.base.Preconditions;
 
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
-import linearAlgebra.domain.rref.*;
+import linearAlgebra.domain.rref.RowOperation;
+import linearAlgebra.domain.rref.RowSwap;
+import linearAlgebra.domain.rref.RowScale;
+import linearAlgebra.domain.rref.RowCombine;
+import linearAlgebra.domain.rref.RowOperations;
+import linearAlgebra.domain.rref.Reduction;
 import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 
@@ -12,9 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Finds the reduced row echelon form ({@code RREF}) of a {@link Matrix}
- * together with the {@link RowOperations} that produced it, and applies them
- * to {@link Matrix} and {@link Vector} objects.
+ * Defines basic operations involving {@link RowOperation} on {@link Matrix} objects.
  */
 public final class RowOperationLogic {
 
@@ -27,7 +30,7 @@ public final class RowOperationLogic {
     }
 
     /**
-     * Reduces a {@link Matrix} to reduced row echelon form.
+     * Reduces a {@link Matrix} to {@code RREF} and records the {@link RowOperations}.
      *
      * @param A the {@link Matrix} to reduce
      * @return the reduced {@link Matrix} and the {@link RowOperations} that produced it
@@ -51,7 +54,7 @@ public final class RowOperationLogic {
 
         while (
             pivotRow < rows &&
-                pivotCol < cols
+            pivotCol < cols
         ) {
             final int bestRow = findPivotRow(working, pivotRow, pivotCol, tolerance);
             if (bestRow != -1) {
@@ -191,7 +194,32 @@ public final class RowOperationLogic {
     public static Matrix rref(
         final Matrix A
     ) {
-        return reduce(A).reduced();
+        Preconditions.checkNotNull(
+            A,
+            "RowOperationLogic.rref: matrix must not be null"
+        );
+
+        return rref(reduce(A));
+    }
+
+    /**
+     * Gives the reduced row echelon form from the provided {@link Reduction}.
+     * The {@link Reduction} must be the one produced from the {@link Matrix} whose
+     * reduced form is wanted; a {@link Reduction} does not record the
+     * {@link Matrix} it came from, so this method cannot verify it.
+     *
+     * @param reduction the {@link Reduction} with the {@code RREF} {@link Matrix}
+     * @return a {@link Matrix} in reduced row echelon form
+     */
+    public static Matrix rref(
+        final Reduction reduction
+    ) {
+        Preconditions.checkNotNull(
+            reduction,
+            "RowOperationLogic.rref: reduction must not be null"
+        );
+
+        return reduction.reduced();
     }
 
     /**
@@ -206,20 +234,51 @@ public final class RowOperationLogic {
     )
         throws InverseNotAvailableException
     {
-        if (A.rows() != A.cols()) {
-            throw new InverseNotAvailableException();
-        }
+        Preconditions.checkNotNull(
+            A,
+            "RowOperationLogic.inverse: matrix must not be null"
+        );
 
-        final Reduction reduction = reduce(A);
-        if (getDeterminant(reduction) == 0) {
-            throw new InverseNotAvailableException();
-        }
-        return applyAll(reduction.operations(), Matrix.identity(A.rows()));
+        return inverse(reduce(A));
     }
 
     /**
-     * Computes the determinant of the {@link Matrix}.
+     * Computes the inverse from the provided {@link Reduction}.
+     * The {@link Reduction} must be the one produced from the {@link Matrix} whose
+     * inverse is wanted; a {@link Reduction} does not record the
+     * {@link Matrix} it came from, so this method cannot verify it.
      *
+     * @param reduction the {@link Reduction} with the {@code RREF} of the {@link Matrix} to invert
+     * @return the inverse, as a new {@link Matrix}
+     * @throws InverseNotAvailableException if the reduced {@link Matrix} is not square or is singular
+     */
+    public static Matrix inverse(
+        final Reduction reduction
+    )
+        throws InverseNotAvailableException
+    {
+        Preconditions.checkNotNull(
+            reduction,
+            "RowOperationLogic.inverse: reduction must not be null"
+        );
+
+        final int rows = reduction.reduced().rows();
+        final int cols = reduction.reduced().cols();
+
+        if (rows != cols) {
+            throw new InverseNotAvailableException();
+        }
+
+        if (getDeterminant(reduction) == 0) {
+            throw new InverseNotAvailableException();
+        }
+        return applyAll(reduction.operations(), Matrix.identity(rows));
+    }
+
+    /**
+     * Computes the determinant of the provided {@link Matrix}.
+     *
+     * @param A the {@link Matrix} to compute the determinant of
      * @return the determinant, which is 0 for a singular {@link Matrix}
      * @throws DeterminantDoesNotExistException if the {@link Matrix} is not square
      */
@@ -228,12 +287,41 @@ public final class RowOperationLogic {
     )
         throws DeterminantDoesNotExistException
     {
-        if (A.rows() != A.cols()) {
-            throw new DeterminantDoesNotExistException();
-        }
-        return getDeterminant(reduce(A));
+        Preconditions.checkNotNull(
+            A,
+            "RowOperationLogic.determinant: matrix must not be null"
+        );
+
+        return determinant(reduce(A));
     }
 
+    /**
+     * Computes the determinant from the provided {@link Reduction}.
+     * The {@link Reduction} must be the one produced from the {@link Matrix} whose
+     * determinant is wanted; a {@link Reduction} does not record the
+     * {@link Matrix} it came from, so this method cannot verify it.
+     *
+     * @param reduction the {@link Reduction} with the {@code RREF} of the {@link Matrix}
+     *                  to compute the determinant of
+     * @return the determinant, which is 0 for a singular {@link Matrix}
+     * @throws DeterminantDoesNotExistException if the reduced {@link Matrix} is not square
+     */
+    public static double determinant(
+        final Reduction reduction
+    )
+        throws DeterminantDoesNotExistException
+    {
+        Preconditions.checkNotNull(
+            reduction,
+            "RowOperationLogic.determinant: reduction must not be null"
+        );
+
+        if (reduction.reduced().rows() != reduction.reduced().cols()) {
+            throw new DeterminantDoesNotExistException();
+        }
+
+        return getDeterminant(reduction);
+    }
 
     // Applies a sequence of elementary row-operations, in order, to a working array.
     private static double[][] applyAll(

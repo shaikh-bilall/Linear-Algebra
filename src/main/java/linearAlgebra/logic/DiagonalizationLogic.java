@@ -17,9 +17,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Diagonalizes a real square {@link Matrix} as {@code A = P D P^-1}, using real numbers only.
- * A {@link Matrix} with complex eigenvalues, or with too few independent eigenvectors,
- * has no such factorization and is rejected.
+ * Defines the diagonalization operation for a real square {@link Matrix} as {@code A = P D P^-1},
+ * using real numbers only.
  */
 public final class DiagonalizationLogic {
 

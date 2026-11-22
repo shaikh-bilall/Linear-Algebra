@@ -1,4 +1,5 @@
 import linearAlgebra.domain.Diagonalization;
+import linearAlgebra.domain.rref.Reduction;
 import linearAlgebra.logic.exceptions.ComplexEigenvaluesException;
 import linearAlgebra.logic.exceptions.DefectiveMatrixException;
 import linearAlgebra.logic.exceptions.DependentEigenvectorsException;
@@ -90,15 +91,16 @@ public class Main {
     ) {
         printHeading(title);
         print("A", A);
+        final Reduction reduction = RowOperationLogic.reduce(A);
 
         try {
-            System.out.println("Determinant: " + format(RowOperationLogic.determinant(A)));
+            System.out.println("Determinant: " + format(RowOperationLogic.determinant(reduction)));
         } catch (DeterminantDoesNotExistException e) {
             System.out.println("A has no determinant because it is not square.");
         }
         System.out.println();
         try {
-            Matrix inverse = RowOperationLogic.inverse(A);
+            Matrix inverse = RowOperationLogic.inverse(reduction);
             print("A^-1", inverse);
             print("A * A^-1 (the identity)", product(A, inverse));
         } catch (InverseNotAvailableException e) {
