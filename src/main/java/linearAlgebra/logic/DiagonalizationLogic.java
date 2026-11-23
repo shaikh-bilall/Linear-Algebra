@@ -22,8 +22,6 @@ import java.util.List;
  */
 public final class DiagonalizationLogic {
 
-    private final Matrix A;
-
     // Machine epsilon: the spacing of doubles just above 1.
     // Drives the QR iteration's deflation test.
     private static final double EPSILON = Math.ulp(1.0);
@@ -45,17 +43,8 @@ public final class DiagonalizationLogic {
     // when fixing an eigenvector's sign.
     private static final double SIGN_TIE_TOLERANCE = 1e-9;
 
-    /**
-     * Creates a diagonalizing logic for a fixed square {@link Matrix}.
-     *
-     * @param A the square {@link Matrix} to diagonalize
-     */
-    public DiagonalizationLogic(
-        final Matrix A
-    ) {
-        this.A = A;
-
-        checkDiagonalizationLogic();
+    // Prevents instantiation.
+    private DiagonalizationLogic() {
     }
 
     /**
@@ -68,12 +57,18 @@ public final class DiagonalizationLogic {
      * @throws DefectiveMatrixException if the {@link Matrix} is defective
      * @throws DependentEigenvectorsException if the eigenvectors of the {@link Matrix} are linearly dependent
      */
-    public Diagonalization diagonalize()
+    public static Diagonalization diagonalize(
+        final Matrix A
+    )
         throws ComplexEigenvaluesException,
         DefectiveMatrixException,
         DependentEigenvectorsException
     {
-        checkDiagonalizationLogic();
+        Preconditions.checkNotNull(
+            A,
+            "DiagonalizationLogic.diagonalize: matrix must not be null"
+        );
+
         final int n = A.rows();
         final double scale = getScale(A);
         final double tolerance = CLUSTER_TOLERANCE * scale;
@@ -107,18 +102,6 @@ public final class DiagonalizationLogic {
         return new Diagonalization(P, new Matrix(diagonalData), inverseP);
     }
 
-    // Checks that the matrix being diagonalized exists and is square.
-    private void checkDiagonalizationLogic() {
-        Preconditions.checkNotNull(
-            A,
-            "DiagonalizationLogic: matrix must not be null"
-        );
-        Preconditions.checkState(
-            A.rows() == A.cols(),
-            "DiagonalizationLogic: matrix must be square"
-        );
-    }
-
     // Reduces H to Hessenberg form with Householder reflections, accumulating them in Q.
     private static void reduceToHessenberg(
         final double[][] H,
@@ -140,8 +123,8 @@ public final class DiagonalizationLogic {
 
             toReflector(v);
             reflectRows(H, v, k + 1, k, n);
-            reflectColumns(H, v, k + 1, 0, n);
-            reflectColumns(Q, v, k + 1, 0, n);
+            reflectColumns(H, v, k + 1, n);
+            reflectColumns(Q, v, k + 1, n);
             for (int i = k + 2; i < n; i++) {
                 H[i][k] = 0;
             }
@@ -240,8 +223,8 @@ public final class DiagonalizationLogic {
             }
 
             reflectRows(H, v, k, Math.max(k - 1, low), n);
-            reflectColumns(H, v, k, 0, Math.min(k + 3, high) + 1);
-            reflectColumns(Q, v, k, 0, n);
+            reflectColumns(H, v, k, Math.min(k + 3, high) + 1);
+            reflectColumns(Q, v, k, n);
             if (k > low) {
                 for (int i = 1; i < size; i++) {
                     H[k + i][k - 1] = 0;
@@ -295,8 +278,8 @@ public final class DiagonalizationLogic {
             H[p][j] = cos * top + sin * bottom;
             H[p + 1][j] = cos * bottom - sin * top;
         }
-        rotateColumns(H, p, 0, p + 2, cos, sin);
-        rotateColumns(Q, p, 0, n, cos, sin);
+        rotateColumns(H, p, p + 2, cos, sin);
+        rotateColumns(Q, p, n, cos, sin);
         H[p + 1][p] = 0;
     }
 
@@ -314,6 +297,25 @@ public final class DiagonalizationLogic {
         }
         order.sort(Comparator.comparingDouble(i -> T[i][i]));
 
+        final List<Cluster> clusters = createClusters(T, tolerance, order);
+
+        // Round magnitudes to tolerance steps so +1 and -1 tie, then put the larger value first.
+        clusters.sort(
+            Comparator
+                .comparingLong(
+                    (Cluster cluster) -> Math.round(Math.abs(cluster.value()) / tolerance)
+                )
+                .thenComparingDouble(Cluster::value)
+                .reversed()
+        );
+        return clusters;
+    }
+
+    private static List<Cluster> createClusters(
+        final double[][] T,
+        final double tolerance,
+        final List<Integer> order
+    ) {
         final List<Cluster> clusters = new ArrayList<>();
         double sum = 0;
         int size = 0;
@@ -330,14 +332,6 @@ public final class DiagonalizationLogic {
             previous = value;
         }
         clusters.add(new Cluster(sum / size, size));
-
-        // Round magnitudes to tolerance steps so +1 and -1 tie, then put the larger value first.
-        clusters.sort(
-            Comparator.comparingLong(
-                (Cluster cluster) -> Math.round(Math.abs(cluster.value()) / tolerance)
-            )
-            .thenComparingDouble(Cluster::value)
-            .reversed());
         return clusters;
     }
 
@@ -387,7 +381,15 @@ public final class DiagonalizationLogic {
                     y[pivotColumn[row]] = -reduced.get(row, free);
                 }
             }
-            eigenvectors.add(normalize(multiplyKnownDimensions(Q, new Vector(y))));
+            Preconditions.checkState(
+                Q.cols() == y.length,
+                "DiagonalizationLogic.getEigenvectors: matrix columns must match vector length"
+            );
+            try {
+                eigenvectors.add(normalize(Q.multiply(new Vector(y))));
+            } catch (MatrixMultiplyDimMismatchException ignored) {
+                // Unreachable: the dimensions are asserted above.
+            }
         }
 
         if (eigenvectors.size() < cluster.size()) {
@@ -424,22 +426,6 @@ public final class DiagonalizationLogic {
             throw new DependentEigenvectorsException();
         }
         return inverse;
-    }
-
-    // Multiplies a matrix by a vector whose length is known to match its column count.
-    private static Vector multiplyKnownDimensions(
-        final Matrix matrix,
-        final Vector vector
-    ) {
-        try {
-            return matrix.multiply(vector);
-        } catch (MatrixMultiplyDimMismatchException e) {
-            Preconditions.checkState( //fixme: always false
-                false,
-                "DiagonalizationLogic.multiplyKnownDimensions: matrix columns must match vector length"
-            );
-            return null;
-        }
     }
 
     // Turns x into a Householder reflector, returning false when x is zero.
@@ -490,10 +476,9 @@ public final class DiagonalizationLogic {
         final double[][] M,
         final double[] v,
         final int col0,
-        final int row0,
         final int row1
     ) {
-        for (int r = row0; r < row1; r++) {
+        for (int r = 0; r < row1; r++) {
             double dot = 0;
             for (int i = 0; i < v.length; i++) {
                 dot += v[i] * M[r][col0 + i];
@@ -509,12 +494,11 @@ public final class DiagonalizationLogic {
     private static void rotateColumns(
         final double[][] M,
         final int p,
-        final int row0,
         final int row1,
         final double cos,
         final double sin
     ) {
-        for (int r = row0; r < row1; r++) {
+        for (int r = 0; r < row1; r++) {
             final double left = M[r][p];
             final double right = M[r][p + 1];
             M[r][p] = cos * left + sin * right;

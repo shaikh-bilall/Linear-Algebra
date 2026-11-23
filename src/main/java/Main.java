@@ -102,7 +102,7 @@ public class Main {
         try {
             Matrix inverse = RowOperationLogic.inverse(reduction);
             print("A^-1", inverse);
-            print("A * A^-1 (the identity)", product(A, inverse));
+            print("A * A^-1 (the identity)", MatrixLogic.multiply(A, inverse));
         } catch (InverseNotAvailableException e) {
             System.out.println("A has no inverse.");
             System.out.println();
@@ -122,7 +122,7 @@ public class Main {
         print("A", left);
         print("B", right);
         try {
-            print("A * B", product(left, right));
+            print("A * B", MatrixLogic.multiply(left, right));
         } catch (MatrixMultiplyDimMismatchException e) {
             System.out.printf(
                 "Cannot multiply a %dx%d matrix by a %dx%d matrix.%n%n",
@@ -140,13 +140,13 @@ public class Main {
         printHeading(title);
         print("A", A);
         try {
-            Diagonalization diagonalization = new DiagonalizationLogic(A).diagonalize();
+            Diagonalization diagonalization = DiagonalizationLogic.diagonalize(A);
             print("P (eigenvectors as columns)", diagonalization.P());
             print("D (eigenvalues on the diagonal)", diagonalization.D());
             print("P^-1", diagonalization.inverseP());
             print("P * D * P^-1 (equals A)",
-                product(
-                    product(
+                MatrixLogic.multiply(
+                    MatrixLogic.multiply(
                         diagonalization.P(), diagonalization.D()
                     ), diagonalization.inverseP()
                 )
@@ -164,16 +164,6 @@ public class Main {
             System.out.println("Not diagonalizable: the eigenvectors do not form a basis.");
             System.out.println();
         }
-    }
-
-    // Multiplies two matrices whose dimensions are known to match.
-    private static Matrix product(
-        final Matrix left,
-        final Matrix right
-    )
-        throws MatrixMultiplyDimMismatchException
-    {
-        return new MatrixLogic(left).multiply(right);
     }
 
     // Prints a section heading followed by a blank line.
