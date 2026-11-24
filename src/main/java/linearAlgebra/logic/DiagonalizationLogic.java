@@ -7,7 +7,7 @@ import linearAlgebra.logic.exceptions.ComplexEigenvaluesException;
 import linearAlgebra.logic.exceptions.DefectiveMatrixException;
 import linearAlgebra.logic.exceptions.DependentEigenvectorsException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
-import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.logic.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.Vector;
 
@@ -55,7 +55,8 @@ public final class DiagonalizationLogic {
      *         the columns of {@code P} the matching unit eigenvectors
      * @throws ComplexEigenvaluesException if the {@link Matrix} has complex eigenvalues
      * @throws DefectiveMatrixException if the {@link Matrix} is defective
-     * @throws DependentEigenvectorsException if the eigenvectors of the {@link Matrix} are linearly dependent
+     * @throws DependentEigenvectorsException if the eigenvectors of the {@link Matrix}
+     * are linearly dependent
      */
     public static Diagonalization diagonalize(
         final Matrix A
@@ -67,6 +68,10 @@ public final class DiagonalizationLogic {
         Preconditions.checkNotNull(
             A,
             "DiagonalizationLogic.diagonalize: matrix must not be null"
+        );
+        Preconditions.checkArgument(
+            A.rows() == A.cols(),
+            "DiagonalizationLogic.diagonalize: matrix must be square"
         );
 
         final int n = A.rows();
@@ -386,7 +391,11 @@ public final class DiagonalizationLogic {
                 "DiagonalizationLogic.getEigenvectors: matrix columns must match vector length"
             );
             try {
-                eigenvectors.add(normalize(Q.multiply(new Vector(y))));
+                eigenvectors.add(
+                    normalize(
+                        MatrixLogic.multiply(Q, new Vector(y))
+                    )
+                );
             } catch (MatrixMultiplyDimMismatchException ignored) {
                 // Unreachable: the dimensions are asserted above.
             }
@@ -523,7 +532,7 @@ public final class DiagonalizationLogic {
     private static double getScale(
         final Matrix A
     ) {
-        final double maxAbs = A.maxAbs();
+        final double maxAbs = MatrixLogic.maxAbs(A);
         return (maxAbs == 0) ? 1 : maxAbs;
     }
 }

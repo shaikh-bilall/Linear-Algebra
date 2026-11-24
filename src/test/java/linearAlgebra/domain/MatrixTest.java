@@ -1,6 +1,6 @@
 package linearAlgebra.domain;
 
-import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.logic.exceptions.MatrixMultiplyDimMismatchException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

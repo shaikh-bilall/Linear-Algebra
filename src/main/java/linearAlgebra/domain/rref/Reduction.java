@@ -9,7 +9,7 @@ import linearAlgebra.domain.Matrix;
  * This class stores an immutable copy of the data and does not allow any modifications.
  *
  * @param reduced    the reduced {@link Matrix}
- * @param operations the {@link RowOperation}s that produced {@code reduced}, in order
+ * @param operations the {@link RowOperations} that produced {@code reduced}, in order
  */
 public record Reduction(
     Matrix reduced,

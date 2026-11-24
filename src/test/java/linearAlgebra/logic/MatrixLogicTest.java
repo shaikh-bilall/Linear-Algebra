@@ -4,7 +4,7 @@ import linearAlgebra.domain.rref.RowCombine;
 import linearAlgebra.domain.rref.RowSwap;
 import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
-import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.logic.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.domain.rref.RowScale;
 import linearAlgebra.domain.Vector;

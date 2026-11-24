@@ -24,6 +24,7 @@ public final class RowOperationLogic {
     // Relative to the largest absolute entry of the input;
     // anything at or below this value counts as zero.
     private static final double RELATIVE_TOLERANCE = 1e-10;
+    private static final double UNIT_PIVOT_TOLERANCE = 1e-9;
 
     // Prevents instantiation.
     private RowOperationLogic() {
@@ -45,7 +46,7 @@ public final class RowOperationLogic {
 
         final List<RowOperation> operations = new ArrayList<>();
         final double[][] working = A.data();
-        final double tolerance = RELATIVE_TOLERANCE * A.maxAbs();
+        final double tolerance = RELATIVE_TOLERANCE * MatrixLogic.maxAbs(A);
         final int rows = working.length;
         final int cols = working[0].length;
 
@@ -487,23 +488,22 @@ public final class RowOperationLogic {
         final Reduction reduction
     ) {
         final Matrix reduced = reduction.reduced();
-        double determinant = 1; //fixme: arbitrary initial value
-        int i = 0;
+        final int size = reduced.rows();
+        int unitPivots = 0;
 
-        while (
-            determinant != 0 &&
-            i < reduced.rows()
-        ) {
-            if (Math.abs(reduced.get(i, i)) < 0.5) { //fixme: magic number 0.5
-                determinant = 0;
+        for (int i = 0; i < size; i++) {
+            if (Math.abs(reduced.get(i, i) - 1) <= UNIT_PIVOT_TOLERANCE) {
+                unitPivots++;
             }
-            i++;
         }
 
-        if (determinant != 0) {
+        double determinant = 0;
+        if (unitPivots == size) {
+            determinant = 1;
             for (var operation : reduction.operations()) {
                 determinant = operation.updatedDeterminant(determinant);
             }
+            determinant = 1 / determinant;
         }
         return determinant;
     }

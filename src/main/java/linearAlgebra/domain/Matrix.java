@@ -2,10 +2,7 @@ package linearAlgebra.domain;
 
 import com.google.common.base.Preconditions;
 
-import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
-
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * A rectangular matrix of finite real numbers.
@@ -36,123 +33,6 @@ public record Matrix(
     @Override
     public double[][] data() {
         return deepCopy(this.data);
-    }
-
-    /**
-     * @return the largest absolute value among the entries
-     */
-    public double maxAbs() {
-        double maxAbs = 0;
-        for (double[] row : data) {
-            for (double entry : row) {
-                maxAbs = Math.max(maxAbs, Math.abs(entry));
-            }
-        }
-        return maxAbs;
-    }
-
-    /**
-     * @return the transpose, with rows and columns flipped
-     */
-    public Matrix transpose() {
-        final int rows = rows();
-        final int cols = cols();
-        double[][] transposedData = new double[cols][rows];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                transposedData[j][i] = data[i][j];
-            }
-        }
-        return new Matrix(transposedData);
-    }
-
-    /**
-     * Multiplies this matrix by a {@link Vector}, giving one entry per row.
-     *
-     * @param v the {@link Vector} to multiply, whose length must equal the number of columns
-     * @return the product of this matrix and {@link Vector}
-     * @throws MatrixMultiplyDimMismatchException if the length of {@link Vector} differs from the number
-     * of columns
-     */
-    public Vector multiply(
-        final Vector v
-    )
-        throws MatrixMultiplyDimMismatchException
-    {
-        Preconditions.checkNotNull(
-            v,
-            "Matrix.multiply: v must not be null"
-        );
-        if (cols() != v.dimension()) {
-            throw new MatrixMultiplyDimMismatchException();
-        }
-
-        double[] resultData = new double[rows()];
-        for (int i = 0; i < rows(); i++) {
-            double sum = 0;
-            for (int j = 0; j < cols(); j++) {
-                sum += data[i][j] * v.get(j);
-            }
-
-            Preconditions.checkState(
-                Double.isFinite(sum),
-                "Matrix.multiply: product entry must be finite"
-            );
-
-            resultData[i] = sum;
-        }
-        return new Vector(resultData);
-    }
-
-    /**
-     * Places another matrix to the right of this one,
-     * as when forming an augmented matrix {@code [A | X]}.
-     *
-     * @param X the matrix whose columns are appended
-     * @return a new matrix with the columns of both
-     */
-    public Matrix merge(
-        final Matrix X
-    ) {
-        Preconditions.checkNotNull(
-            X,
-            "Matrix.merge: X matrix must not be null"
-        );
-        Preconditions.checkArgument(
-            rows() == X.rows(),
-            "Matrix.merge: both matrices must have the same number of rows"
-        );
-
-        final int cols = cols();
-        final int otherCols = X.cols();
-        double[][] mergedData = new double[rows()][cols + otherCols];
-        for (int i = 0; i < rows(); i++) {
-            System.arraycopy(data[i], 0, mergedData[i], 0, cols);
-            System.arraycopy(X.data[i], 0, mergedData[i], cols, otherCols);
-        }
-        return new Matrix(mergedData);
-    }
-
-    /**
-     * Reorders the rows according to the provided specification.
-     *
-     * @param shuffledIndices a permutation of the row indices
-     * @return a new matrix with the reordered rows
-     */
-    public Matrix permuteRows(
-        final List<Integer> shuffledIndices
-    ) {
-        Permutations.checkPermutation(
-            shuffledIndices,
-            rows(),
-            "Matrix.permuteRows"
-        );
-
-        double[][] shuffledData = new double[rows()][cols()];
-        for (int i = 0; i < rows(); i++) {
-            shuffledData[i] = data[shuffledIndices.get(i)].clone();
-        }
-        return new Matrix(shuffledData);
     }
 
     /**

@@ -1,4 +1,4 @@
-package linearAlgebra.domain.exceptions;
+package linearAlgebra.logic.exceptions;
 
 import linearAlgebra.domain.Matrix;
 

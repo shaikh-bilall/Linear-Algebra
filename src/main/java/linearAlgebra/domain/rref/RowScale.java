@@ -25,7 +25,7 @@ public record RowScale(
     }
 
     /**
-     * Applying the scaling {@link RowOperation} divides the determinant by the scalar.
+     * Applying the scaling {@link RowOperation} multiplies the determinant by the scalar.
      *
      * @param determinant The determinant before applying this operation.
      * @return the determinant after applying this operation.
@@ -33,7 +33,7 @@ public record RowScale(
     public double updatedDeterminant(
         final double determinant
     ) {
-        return determinant/scalar;
+        return determinant*scalar;
     }
 
     /**

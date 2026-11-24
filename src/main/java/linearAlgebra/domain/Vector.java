@@ -163,8 +163,7 @@ public record Vector(
     ) {
         Permutations.checkPermutation(
             shuffledIndices,
-            data.length,
-            "Vector.permute"
+            data.length
         );
 
         double[] shuffledData = new double[data.length];

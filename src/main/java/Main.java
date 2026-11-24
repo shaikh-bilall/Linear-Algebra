@@ -5,7 +5,7 @@ import linearAlgebra.logic.exceptions.DefectiveMatrixException;
 import linearAlgebra.logic.exceptions.DependentEigenvectorsException;
 import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
-import linearAlgebra.domain.exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.logic.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.logic.DiagonalizationLogic;
 import linearAlgebra.logic.MatrixLogic;
@@ -76,7 +76,7 @@ public class Main {
     private static void solveLinearSystem() {
         Matrix A = new Matrix(new double[][]{{2, 1, -1}, {-3, -1, 2}, {-2, 1, 2}});
         Matrix b = new Matrix(new double[][]{{8}, {-11}, {-3}});
-        Matrix augmented = A.merge(b);
+        Matrix augmented = MatrixLogic.merge(A, b);
 
         printHeading("1. Solving A x = b with RREF (the solution is x = [2, 3, -1])");
         print("Augmented matrix [A | b]", augmented);
