@@ -412,14 +412,14 @@ public final class DiagonalizationLogic {
     private static Vector normalize(
         final Vector v
     ) {
-        final Vector unit = v.scale(1 / v.norm());
+        final Vector unit = VectorLogic.scale(v, 1 / VectorLogic.norm(v));
         int largest = 0;
         for (int i = 1; i < unit.dimension(); i++) {
             if (Math.abs(unit.get(i)) > Math.abs(unit.get(largest)) * (1 + SIGN_TIE_TOLERANCE)) {
                 largest = i;
             }
         }
-        return (unit.get(largest) < 0) ? unit.scale(-1) : unit;
+        return (unit.get(largest) < 0) ? VectorLogic.scale(unit, -1) : unit;
     }
 
     // Inverts P, translating a singular P into a dependent-eigenvectors failure.

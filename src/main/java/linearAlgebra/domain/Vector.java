@@ -5,7 +5,6 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -48,129 +47,6 @@ public record Vector(
     @Override
     public double[] data() {
         return data.clone();
-    }
-
-    /**
-     * Returns the entrywise sum of this vector and another of the same length.
-     *
-     * @param other the vector to add
-     * @return a new vector holding the sum
-     */
-    public Vector add(
-        final Vector other
-    ) {
-        Preconditions.checkNotNull(
-            other,
-            "Vector.add: other vector must not be null"
-        );
-        Preconditions.checkArgument(
-            this.dimension() == other.dimension(),
-            "Vector.add: dimensions must match for both vectors"
-        );
-
-        double[] result = data.clone();
-        for (int i = 0; i < data.length; i++) {
-            result[i] += other.data[i];
-
-            Preconditions.checkState(
-                Double.isFinite(result[i]),
-                "Vector.add: sum entry must be finite"
-            );
-        }
-        return new Vector(result);
-    }
-
-    /**
-     * Returns this vector multiplied by a scalar.
-     *
-     * @param scalar the finite factor to multiply every entry by
-     * @return a new vector holding the product
-     */
-    public Vector scale(
-        final double scalar
-    ) {
-        Preconditions.checkArgument(
-            Double.isFinite(scalar),
-            "Vector.scale: scalar must be finite"
-        );
-
-        double[] result = data.clone();
-        for (int i = 0; i < data.length; i++) {
-            result[i] *= scalar;
-
-            Preconditions.checkState(
-                Double.isFinite(result[i]),
-                "Vector.scale: product entry must be finite"
-            );
-        }
-        return new Vector(result);
-    }
-
-    /**
-     * Returns the dot product of this vector and another one.
-     *
-     * @param other the vector to take the dot product with
-     * @return the dot product
-     */
-    public double dot(
-        final Vector other
-    ) {
-        Preconditions.checkNotNull(
-            other,
-            "Vector.dot: other vector must not be null"
-        );
-        Preconditions.checkArgument(
-            this.dimension() == other.dimension(),
-            "Vector.dot: dimensions must match for both vectors"
-        );
-
-        double result = 0;
-        for (int i = 0; i < data.length; i++) {
-            result += this.data[i] * other.data[i];
-        }
-
-        Preconditions.checkState(
-            Double.isFinite(result),
-            "Vector.dot: dot product must be finite"
-        );
-
-        return result;
-    }
-
-    /**
-     * @return the Euclidean length of this vector
-     */
-    public double norm() {
-        double norm = 0;
-        for (double v : data) {
-            norm = Math.hypot(norm, v);
-        }
-        Preconditions.checkState(
-            Double.isFinite(norm),
-            "Vector.norm: norm must be finite"
-        );
-        return norm;
-    }
-
-    /**
-     * Reorders the entries according to the given specification.
-     *
-     * @param shuffledIndices a permutation of the indices
-     * @return a new vector with the reordered entries
-     */
-    public Vector permute(
-        final List<Integer> shuffledIndices
-    ) {
-        Permutations.checkPermutation(
-            shuffledIndices,
-            data.length
-        );
-
-        double[] shuffledData = new double[data.length];
-        for (int i = 0; i < data.length; i++) {
-            shuffledData[i] = data[shuffledIndices.get(i)];
-        }
-        return new Vector(shuffledData);
     }
 
     /**
