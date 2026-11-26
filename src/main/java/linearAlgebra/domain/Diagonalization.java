@@ -32,30 +32,6 @@ public record Diagonalization(
     }
 
     /**
-     * @return the eigenvector {@link Matrix} {@code P} of {@code A}
-     */
-    @Override
-    public Matrix P() {
-        return P;
-    }
-
-    /**
-     * @return the {@link Matrix} with eigenvalues on the diagonal {@code D}
-     */
-    @Override
-    public Matrix D() {
-        return D;
-    }
-
-    /**
-     * @return the inverse of the eigenvector {@link Matrix} {@code P}
-     */
-    @Override
-    public Matrix inverseP() {
-        return inverseP;
-    }
-
-    /**
      * @return a new diagonalization with equal matrices
      */
     public Diagonalization copy() {

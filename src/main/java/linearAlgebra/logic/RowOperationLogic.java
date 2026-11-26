@@ -25,6 +25,7 @@ public final class RowOperationLogic {
     // anything at or below this value counts as zero.
     private static final double RELATIVE_TOLERANCE = 1e-10;
     private static final double UNIT_PIVOT_TOLERANCE = 1e-9;
+    private static final int NO_PIVOT_ROW = -1;
 
     // Prevents instantiation.
     private RowOperationLogic() {
@@ -58,7 +59,7 @@ public final class RowOperationLogic {
             pivotCol < cols
         ) {
             final int bestRow = findPivotRow(working, pivotRow, pivotCol, tolerance);
-            if (bestRow != -1) {
+            if (bestRow != NO_PIVOT_ROW) {
                 if (bestRow != pivotRow) {
                     applyAndRecord(working, operations, new RowSwap(pivotRow, bestRow));
                 }
@@ -419,14 +420,14 @@ public final class RowOperationLogic {
     }
 
     // Returns the largest-magnitude row at or below startRow
-    // in a column, or -1 if none is significant.
+    // in a column, or NO_PIVOT_ROW if none is significant.
     private static int findPivotRow(
         final double[][] data,
         final int startRow,
         final int col,
         final double tolerance
     ) {
-        int bestRow = -1;
+        int bestRow = NO_PIVOT_ROW;
         double bestMagnitude = tolerance;
         for (int row = startRow; row < data.length; row++) {
             final double magnitude = Math.abs(data[row][col]);

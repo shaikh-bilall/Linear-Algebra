@@ -62,14 +62,6 @@ public record RowOperations(
     }
 
     /**
-     * @return the {@link RowOperation}s
-     */
-    @Override
-    public List<RowOperation> operations() {
-        return List.copyOf(operations);
-    }
-
-    /**
      * @return a new sequence of {@link RowOperation}s with the same operations
      */
     public RowOperations copy() {

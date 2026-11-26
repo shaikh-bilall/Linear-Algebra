@@ -37,20 +37,6 @@ public record RowScale(
     }
 
     /**
-     * @return the zero-based index of the row to scale
-     */
-    public int targetRow() {
-        return targetRow;
-    }
-
-    /**
-     * @return the nonzero, finite {@code scalar}
-     */
-    public double scalar() {
-        return scalar;
-    }
-
-    /**
      * @return a new scaling {@link RowOperation} with the same index and scalar
      */
     public RowScale copy() {

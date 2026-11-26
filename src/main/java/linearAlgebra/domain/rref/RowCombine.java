@@ -42,27 +42,6 @@ public record RowCombine(
     }
 
     /**
-     * @return the zero-based index of the row whose {@code scalar} multiple is added
-     */
-    public int sourceRow() {
-        return sourceRow;
-    }
-
-    /**
-     * @return the zero-based index of the row that receives the {@code scalar} multiple
-     */
-    public int targetRow() {
-        return targetRow;
-    }
-
-    /**
-     * @return the nonzero, finite {@code scalar} multiple
-     */
-    public double scalar() {
-        return scalar;
-    }
-
-    /**
      * @return a new linear combination {@link RowOperation} with the same indices and scalar
      */
     public RowCombine copy() {

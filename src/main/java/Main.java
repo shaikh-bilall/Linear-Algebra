@@ -6,6 +6,7 @@ import linearAlgebra.logic.exceptions.DependentEigenvectorsException;
 import linearAlgebra.logic.exceptions.DeterminantDoesNotExistException;
 import linearAlgebra.logic.exceptions.InverseNotAvailableException;
 import linearAlgebra.logic.exceptions.MatrixMultiplyDimMismatchException;
+import linearAlgebra.logic.exceptions.MatrixMergeDimMismatchException;
 import linearAlgebra.domain.Matrix;
 import linearAlgebra.logic.DiagonalizationLogic;
 import linearAlgebra.logic.MatrixLogic;
@@ -71,20 +72,26 @@ public class Main {
         );
     }
 
-    // Solves A x = b by row reducing the augmented matrix [A | b]: the last column of the RREF is the
-    // solution.
+    // Solves A x = b by row reducing the augmented matrix [A | b]:
+    // the last column of the RREF is the solution.
     private static void solveLinearSystem() {
         Matrix A = new Matrix(new double[][]{{2, 1, -1}, {-3, -1, 2}, {-2, 1, 2}});
         Matrix b = new Matrix(new double[][]{{8}, {-11}, {-3}});
-        Matrix augmented = MatrixLogic.merge(A, b);
 
-        printHeading("1. Solving A x = b with RREF (the solution is x = [2, 3, -1])");
-        print("Augmented matrix [A | b]", augmented);
-        print("RREF of [A | b]", RowOperationLogic.rref(augmented));
+        try {
+            Matrix augmented = MatrixLogic.merge(A, b);
+
+            printHeading("1. Solving A x = b with RREF (the solution is x = [2, 3, -1])");
+            print("Augmented matrix [A | b]", augmented);
+            print("RREF of [A | b]", RowOperationLogic.rref(augmented));
+
+        } catch (MatrixMergeDimMismatchException e) {
+            System.out.println("Matrices cannot be merged because their dimensions do not match.");
+        }
     }
 
     // Prints the determinant and, when it exists,
-    // the inverse together with a check that A * A^-1 is the identity.
+    // the inverse together with the product A * A^-1, which should be the identity.
     private static void showInverse(
         final String title,
         final Matrix A
@@ -131,7 +138,7 @@ public class Main {
         }
     }
 
-    // Prints A = P D P^-1 with a check that multiplying the factors back together gives A,
+    // Prints A = P D P^-1 and the product of the factors, which should reproduce A,
     // or why A has no such form.
     private static void showDiagonalization(
         final String title,

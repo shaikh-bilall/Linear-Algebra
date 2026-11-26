@@ -27,22 +27,6 @@ public record Reduction(
     }
 
     /**
-     * @return the reduced {@link Matrix}
-     */
-    @Override
-    public Matrix reduced() {
-        return reduced;
-    }
-
-    /**
-     * @return the {@link RowOperations} in order
-     */
-    @Override
-    public RowOperations operations() {
-        return operations;
-    }
-
-    /**
      * @return a new reduction with the same reduced matrix and operations
      */
     public Reduction copy() {

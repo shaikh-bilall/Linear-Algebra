@@ -30,6 +30,8 @@ public final class DiagonalizationLogic {
     // Ordinary matrices need a handful,
     // but defective ones converge slowly (a 4x4 Jordan block took about 50).
     private static final int MAX_ITERATIONS = 100;
+    private static final int FRANCIS_BULGE_SIZE = 3;
+    private static final int NO_PIVOT_COLUMN = -1;
     private static final int EXCEPTIONAL_SHIFT_FIRST_ITERATION = 10;
     private static final int EXCEPTIONAL_SHIFT_SECOND_ITERATION = 20;
     private static final double EXCEPTIONAL_SHIFT_MEAN_FACTOR = 0.75;
@@ -222,14 +224,14 @@ public final class DiagonalizationLogic {
         }
 
         for (int k = low; k < high; k++) {
-            final int size = Math.min(3, high - k + 1);
+            final int size = Math.min(FRANCIS_BULGE_SIZE, high - k + 1);
             final double[] v = new double[size];
             if (k == low) {
                 // First column of (H - s1 I)(H - s2 I); differences from the mean avoid cancellation.
                 final double topShifted = H[low][low] - mean;
                 v[0] = topShifted * topShifted - discriminant + H[low][low + 1] * H[low + 1][low];
                 v[1] = H[low + 1][low] * (topShifted + (H[low + 1][low + 1] - mean));
-                v[2] = H[low + 1][low] * H[low + 2][low + 1];
+                v[size - 1] = H[low + 1][low] * H[low + 2][low + 1];
             } else {
                 // The bulge sits in column k - 1, just below the subdiagonal.
                 for (int i = 0; i < size; i++) {
@@ -238,7 +240,7 @@ public final class DiagonalizationLogic {
             }
             if (toReflector(v)) {
                 reflectRows(H, v, k, Math.max(k - 1, low), n);
-                reflectColumns(H, v, k, Math.min(k + 3, high) + 1);
+                reflectColumns(H, v, k, Math.min(k + FRANCIS_BULGE_SIZE, high) + 1);
                 reflectColumns(Q, v, k, n);
                 if (k > low) {
                     for (int i = 1; i < size; i++) {
@@ -281,22 +283,21 @@ public final class DiagonalizationLogic {
             y = z - 2 * half;
         }
         final double length = Math.hypot(x, y);
-        if (length == 0) {
-            return;
-        }
-        final double cos = x / length;
-        final double sin = y / length;
+        if (length != 0) {
+            final double cos = x / length;
+            final double sin = y / length;
 
-        // H := G^T H G and Q := Q G, with G = [[cos, -sin], [sin, cos]] acting on indices p and p + 1
-        for (int j = p; j < n; j++) {
-            final double top = H[p][j];
-            final double bottom = H[p + 1][j];
-            H[p][j] = cos * top + sin * bottom;
-            H[p + 1][j] = cos * bottom - sin * top;
+            // H := G^T H G and Q := Q G, with G = [[cos, -sin], [sin, cos]] acting on indices p and p + 1
+            for (int j = p; j < n; j++) {
+                final double top = H[p][j];
+                final double bottom = H[p + 1][j];
+                H[p][j] = cos * top + sin * bottom;
+                H[p + 1][j] = cos * bottom - sin * top;
+            }
+            rotateColumns(H, p, p + 2, cos, sin);
+            rotateColumns(Q, p, n, cos, sin);
+            H[p + 1][p] = 0;
         }
-        rotateColumns(H, p, p + 2, cos, sin);
-        rotateColumns(Q, p, n, cos, sin);
-        H[p + 1][p] = 0;
     }
 
     // One distinct eigenvalue and how many diagonal entries it covers.
@@ -374,7 +375,7 @@ public final class DiagonalizationLogic {
 
         final int[] pivotColumn = new int[n];
         final boolean[] isPivot = new boolean[n];
-        Arrays.fill(pivotColumn, -1);
+        Arrays.fill(pivotColumn, NO_PIVOT_COLUMN);
         for (int row = 0; row < n; row++) {
             int col = 0;
             while (
@@ -390,12 +391,16 @@ public final class DiagonalizationLogic {
         }
 
         final List<Vector> eigenvectors = new ArrayList<>();
-        for (int free = 0; free < n && eigenvectors.size() < cluster.size(); free++) {
+        int free = 0;
+        while (
+            free < n &&
+            eigenvectors.size() < cluster.size()
+        ) {
             if (!isPivot[free]) {
                 final double[] y = new double[n];
                 y[free] = 1;
                 for (int row = 0; row < n; row++) {
-                    if (pivotColumn[row] != -1) {
+                    if (pivotColumn[row] != NO_PIVOT_COLUMN) {
                         y[pivotColumn[row]] = -reduced.get(row, free);
                     }
                 }
@@ -413,6 +418,7 @@ public final class DiagonalizationLogic {
                     // Unreachable: the dimensions are asserted above.
                 }
             }
+            free++;
         }
 
         if (eigenvectors.size() < cluster.size()) {
@@ -459,18 +465,19 @@ public final class DiagonalizationLogic {
         for (double entry : x) {
             norm = Math.hypot(norm, entry);
         }
-        if (norm == 0) {
-            return false;
+        boolean success = false;
+        if (norm != 0) {
+            x[0] += (x[0] >= 0) ? norm : -norm;
+            double length = 0;
+            for (double entry : x) {
+                length = Math.hypot(length, entry);
+            }
+            for (int i = 0; i < x.length; i++) {
+                x[i] /= length;
+            }
+            success = true;
         }
-        x[0] += (x[0] >= 0) ? norm : -norm;
-        double length = 0;
-        for (double entry : x) {
-            length = Math.hypot(length, entry);
-        }
-        for (int i = 0; i < x.length; i++) {
-            x[i] /= length;
-        }
-        return true;
+        return success;
     }
 
     // M := (I - 2vv^T) M on the rows row0 ... row0 + v.length - 1, restricted to the columns [col0,

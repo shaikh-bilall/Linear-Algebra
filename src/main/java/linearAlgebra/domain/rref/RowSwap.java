@@ -7,7 +7,7 @@ import com.google.common.base.Preconditions;
  * This class stores an immutable copy of the data and does not allow any modifications.
  *
  * @param sourceRow the zero-based index of one of the rows
- * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
+ * @param targetRow the zero-based index of the other row
  */
 public record RowSwap(
     int sourceRow,
@@ -18,7 +18,7 @@ public record RowSwap(
      * Stores the swap {@link RowOperation}.
      *
      * @param sourceRow the zero-based index of one of the rows
-     * @param targetRow the zero-based index of the other row; it may equal {@code sourceRow}
+     * @param targetRow the zero-based index of the other row
      */
     public RowSwap {
         checkRowSwap(sourceRow, targetRow);
@@ -34,20 +34,6 @@ public record RowSwap(
         final double determinant
     ) {
         return -determinant;
-    }
-
-    /**
-     * @return the zero-based index of the first row to swap
-     */
-    public int sourceRow() {
-        return sourceRow;
-    }
-
-    /**
-     * @return the zero-based index of the second row to swap
-     */
-    public int targetRow() {
-        return targetRow;
     }
 
     /**
@@ -69,6 +55,10 @@ public record RowSwap(
         Preconditions.checkArgument(
             targetRow >= 0,
             "RowSwap: target row index must be non-negative"
+        );
+        Preconditions.checkArgument(
+            sourceRow != targetRow,
+            "RowSwap: source and target row indices must be distinct"
         );
     }
 }
