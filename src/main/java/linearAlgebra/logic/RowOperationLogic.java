@@ -449,12 +449,11 @@ public final class RowOperationLogic {
         // Read the actual pivot rather than assuming 1: after RowScale it can be 1 +/- an ulp.
         final double pivot = working[pivotRow][pivotCol];
         for (int row = 0; row < working.length; row++) {
-            if (row == pivotRow) {
-                continue;
-            }
-            final double entry = working[row][pivotCol];
-            if (Math.abs(entry) > tolerance) {
-                applyAndRecord(working, operations, new RowCombine(pivotRow, row, -entry / pivot));
+            if (row != pivotRow) {
+                final double entry = working[row][pivotCol];
+                if (Math.abs(entry) > tolerance) {
+                    applyAndRecord(working, operations, new RowCombine(pivotRow, row, -entry / pivot));
+                }
             }
         }
     }

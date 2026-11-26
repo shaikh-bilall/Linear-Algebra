@@ -126,16 +126,14 @@ public final class DiagonalizationLogic {
                     below += v[i] * v[i];
                 }
             }
-            if (below == 0) {
-                continue; // nothing to clear below the subdiagonal in this column
-            }
-
-            toReflector(v);
-            reflectRows(H, v, k + 1, k, n);
-            reflectColumns(H, v, k + 1, n);
-            reflectColumns(Q, v, k + 1, n);
-            for (int i = k + 2; i < n; i++) {
-                H[i][k] = 0;
+            if (below != 0) {
+                toReflector(v);
+                reflectRows(H, v, k + 1, k, n);
+                reflectColumns(H, v, k + 1, n);
+                reflectColumns(Q, v, k + 1, n);
+                for (int i = k + 2; i < n; i++) {
+                    H[i][k] = 0;
+                }
             }
         }
     }
@@ -153,17 +151,11 @@ public final class DiagonalizationLogic {
         int iterations = 0;
         while (high >= 0) {
             int low = high;
-            while (low > 0) {
-                double size = Math.abs(H[low - 1][low - 1]) + Math.abs(H[low][low]);
-                if (size <= EPSILON * norm) {
-                    size = norm;
-                    // Both neighbors are about zero, so compare against the whole matrix instead.
-                }
-                if (Math.abs(H[low][low - 1]) <= EPSILON * size) {
-                    H[low][low - 1] = 0;
-                    break;
-                }
+            while (low > 0 && !isNegligibleSubdiagonal(H, low, norm)) {
                 low--;
+            }
+            if (low > 0) {
+                H[low][low - 1] = 0;
             }
 
             if (low == high) {
@@ -183,6 +175,20 @@ public final class DiagonalizationLogic {
                 francisStep(H, Q, low, high, iterations);
             }
         }
+    }
+
+    // Checks whether the subdiagonal entry at low is small enough to split the active block.
+    private static boolean isNegligibleSubdiagonal(
+        final double[][] H,
+        final int low,
+        final double norm
+    ) {
+        double size = Math.abs(H[low - 1][low - 1]) + Math.abs(H[low][low]);
+        if (size <= EPSILON * norm) {
+            size = norm;
+            // Both neighbors are about zero, so compare against the whole matrix instead.
+        }
+        return Math.abs(H[low][low - 1]) <= EPSILON * size;
     }
 
     // Performs one implicit double-shift QR sweep on the active window.
@@ -230,16 +236,14 @@ public final class DiagonalizationLogic {
                     v[i] = H[k + i][k - 1];
                 }
             }
-            if (!toReflector(v)) {
-                continue;
-            }
-
-            reflectRows(H, v, k, Math.max(k - 1, low), n);
-            reflectColumns(H, v, k, Math.min(k + 3, high) + 1);
-            reflectColumns(Q, v, k, n);
-            if (k > low) {
-                for (int i = 1; i < size; i++) {
-                    H[k + i][k - 1] = 0;
+            if (toReflector(v)) {
+                reflectRows(H, v, k, Math.max(k - 1, low), n);
+                reflectColumns(H, v, k, Math.min(k + 3, high) + 1);
+                reflectColumns(Q, v, k, n);
+                if (k > low) {
+                    for (int i = 1; i < size; i++) {
+                        H[k + i][k - 1] = 0;
+                    }
                 }
             }
         }
@@ -372,39 +376,42 @@ public final class DiagonalizationLogic {
         final boolean[] isPivot = new boolean[n];
         Arrays.fill(pivotColumn, -1);
         for (int row = 0; row < n; row++) {
-            for (int col = 0; col < n; col++) {
-                if (Math.abs(reduced.get(row, col)) > PIVOT_THRESHOLD) {
-                    pivotColumn[row] = col;
-                    isPivot[col] = true;
-                    break;
-                }
+            int col = 0;
+            while (
+                col < n &&
+                Math.abs(reduced.get(row, col)) <= PIVOT_THRESHOLD
+            ) {
+                col++;
+            }
+            if (col < n) {
+                pivotColumn[row] = col;
+                isPivot[col] = true;
             }
         }
 
         final List<Vector> eigenvectors = new ArrayList<>();
         for (int free = 0; free < n && eigenvectors.size() < cluster.size(); free++) {
-            if (isPivot[free]) {
-                continue;
-            }
-            final double[] y = new double[n];
-            y[free] = 1;
-            for (int row = 0; row < n; row++) {
-                if (pivotColumn[row] != -1) {
-                    y[pivotColumn[row]] = -reduced.get(row, free);
+            if (!isPivot[free]) {
+                final double[] y = new double[n];
+                y[free] = 1;
+                for (int row = 0; row < n; row++) {
+                    if (pivotColumn[row] != -1) {
+                        y[pivotColumn[row]] = -reduced.get(row, free);
+                    }
                 }
-            }
-            Preconditions.checkState(
-                Q.cols() == y.length,
-                "DiagonalizationLogic.getEigenvectors: matrix columns must match vector length"
-            );
-            try {
-                eigenvectors.add(
-                    normalize(
-                        MatrixLogic.multiply(Q, new Vector(y))
-                    )
+                Preconditions.checkState(
+                    Q.cols() == y.length,
+                    "DiagonalizationLogic.getEigenvectors: matrix columns must match vector length"
                 );
-            } catch (MatrixMultiplyDimMismatchException ignored) {
-                // Unreachable: the dimensions are asserted above.
+                try {
+                    eigenvectors.add(
+                        normalize(
+                            MatrixLogic.multiply(Q, new Vector(y))
+                        )
+                    );
+                } catch (MatrixMultiplyDimMismatchException ignored) {
+                    // Unreachable: the dimensions are asserted above.
+                }
             }
         }
 
