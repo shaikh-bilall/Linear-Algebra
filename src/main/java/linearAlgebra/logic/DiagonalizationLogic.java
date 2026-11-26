@@ -30,6 +30,10 @@ public final class DiagonalizationLogic {
     // Ordinary matrices need a handful,
     // but defective ones converge slowly (a 4x4 Jordan block took about 50).
     private static final int MAX_ITERATIONS = 100;
+    private static final int EXCEPTIONAL_SHIFT_FIRST_ITERATION = 10;
+    private static final int EXCEPTIONAL_SHIFT_SECOND_ITERATION = 20;
+    private static final double EXCEPTIONAL_SHIFT_MEAN_FACTOR = 0.75;
+    private static final double EXCEPTIONAL_SHIFT_DISCRIMINANT_FACTOR = -0.4375;
     // Relative to the largest absolute entry of the input;
     // eigenvalues closer than this are one repeated eigenvalue,
     // and an imaginary part this small counts as zero.
@@ -200,12 +204,15 @@ public final class DiagonalizationLogic {
         final double d = H[high][high];
         double mean = (a + d) / 2;
         double discriminant = ((a - d) / 2) * ((a - d) / 2) + b * c;
-        if (iteration == 10 || iteration == 20) { //fixme: exceptional shift bounds
-            // Exceptional shift: the ordinary shifts have stalled, so take a deliberately different
-            // pair.
+        if (
+            iteration == EXCEPTIONAL_SHIFT_FIRST_ITERATION ||
+            iteration == EXCEPTIONAL_SHIFT_SECOND_ITERATION
+        ) {
+            // Exceptional shift: the ordinary shifts have stalled,
+            // so take a deliberately different pair.
             final double size = Math.abs(c) + Math.abs(H[high - 1][high - 2]);
-            mean = 0.75 * size; //fixme: Wilkinson shift constants
-            discriminant = -0.4375 * size * size; //fixme: Wilkinson shift constants
+            mean = EXCEPTIONAL_SHIFT_MEAN_FACTOR * size;
+            discriminant = EXCEPTIONAL_SHIFT_DISCRIMINANT_FACTOR * size * size;
         }
 
         for (int k = low; k < high; k++) {

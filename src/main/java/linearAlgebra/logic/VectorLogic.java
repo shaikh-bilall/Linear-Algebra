@@ -1,10 +1,7 @@
 package linearAlgebra.logic;
 
 import com.google.common.base.Preconditions;
-import linearAlgebra.domain.Permutations;
 import linearAlgebra.domain.Vector;
-
-import java.util.List;
 
 /**
  * Defines basic mathematical operations for {@link Vector}s.
@@ -154,36 +151,5 @@ public final class VectorLogic {
         );
 
         return norm;
-    }
-
-    /**
-     * Reorders the {@link Vector} entries according to the given specification.
-     *
-     * @param vector the {@link Vector} to reorder
-     * @param shuffledIndices a permutation of the indices
-     * @return a {@link Vector} with the reordered entries
-     */
-    public Vector permute(
-        final Vector vector,
-        final List<Integer> shuffledIndices
-    ) {
-        Preconditions.checkNotNull(
-            vector,
-            "Vector.permute: vector must not be null"
-        );
-        Permutations.checkPermutation(
-            shuffledIndices,
-            vector.dimension()
-        );
-
-        final double[] shuffledData = vector.data();
-        for (int i = 0; i < vector.dimension(); i++) {
-            double temp = shuffledData[i];
-            shuffledData[i] = shuffledData[shuffledIndices.get(i)];
-            shuffledData[shuffledIndices.get(i)] = temp;
-
-        }
-
-        return new Vector(shuffledData);
     }
 }

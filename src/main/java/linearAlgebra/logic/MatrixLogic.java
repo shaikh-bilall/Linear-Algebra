@@ -1,12 +1,10 @@
 package linearAlgebra.logic;
 
 import com.google.common.base.Preconditions;
-import linearAlgebra.domain.Permutations;
 import linearAlgebra.domain.Vector;
+import linearAlgebra.logic.exceptions.MatrixMergeDimMismatchException;
 import linearAlgebra.logic.exceptions.MatrixMultiplyDimMismatchException;
 import linearAlgebra.domain.Matrix;
-
-import java.util.List;
 
 /**
  * Defines basic linear algebra operations for a {@link Matrix}.
@@ -176,11 +174,14 @@ public final class MatrixLogic {
      * @param left   the {@link Matrix} whose columns are appended to the left
      * @param right  the {@link Matrix} whose columns are appended to the right
      * @return a {@link Matrix} with the columns of both
+     * @throws MatrixMergeDimMismatchException if the matrices have different numbers of rows
      */
     public static Matrix merge(
         final Matrix left,
         final Matrix right
-    ) {
+    )
+        throws MatrixMergeDimMismatchException
+    {
         Preconditions.checkNotNull(
             left,
             "MatrixLogic.merge: left matrix must not be null"
@@ -189,10 +190,9 @@ public final class MatrixLogic {
             right,
             "MatrixLogic.merge: right matrix must not be null"
         );
-        Preconditions.checkArgument( //fixme: add a new custom exception
-            left.rows() == right.rows(),
-            "MatrixLogic.merge: both matrices must have the same number of rows"
-        );
+        if (left.rows() != right.rows()) {
+            throw new MatrixMergeDimMismatchException();
+        }
 
         final int cols = left.cols();
         final int otherCols = right.cols();
@@ -208,39 +208,5 @@ public final class MatrixLogic {
         }
 
         return new Matrix(mergedData);
-    }
-
-    /**
-     * Reorders the rows of a {@link Matrix} according to the provided specification.
-     *
-     * @param matrix          the {@link Matrix} to reorder
-     * @param shuffledIndices a permutation of the row indices
-     * @return a {@link Matrix} with the reordered rows
-     */
-    public static Matrix permuteRows(
-        final Matrix matrix,
-        final List<Integer> shuffledIndices
-    ) {
-        Preconditions.checkNotNull(
-            matrix,
-            "MatrixLogic.permuteRows: matrix must not be null"
-        );
-        Preconditions.checkNotNull(
-            shuffledIndices,
-            "MatrixLogic.permuteRows: shuffledIndices must not be null"
-        );
-        Permutations.checkPermutation( //fixme: add a new custom exception
-            shuffledIndices,
-            matrix.rows()
-        );
-
-        final double[][] data = matrix.data();
-        final double[][] shuffledData = new double[matrix.rows()][matrix.cols()];
-
-        for (int i = 0; i < matrix.rows(); i++) {
-            shuffledData[i] = data[shuffledIndices.get(i)].clone();
-        }
-
-        return new Matrix(shuffledData);
     }
 }
